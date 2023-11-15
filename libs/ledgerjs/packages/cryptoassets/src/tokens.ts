@@ -11,6 +11,7 @@ import casperTokens, { CasperToken } from "./data/casper";
 import trc10tokens, { TRC10Token } from "./data/trc10";
 import trc20tokens, { TRC20Token } from "./data/trc20";
 import vechainTokens, { vip180Token } from "./data/vip180";
+import spltokens, { SPLToken } from "./data/spl";
 
 const emptyArray = [];
 const tokensArray: TokenCurrency[] = [];
@@ -34,6 +35,7 @@ addTokens(cardanoNativeTokens.map(convertCardanoNativeTokens));
 addTokens(stellarTokens.map(convertStellarTokens));
 addTokens(casperTokens.map(convertCasperTokens));
 addTokens(vechainTokens.map(convertVechainToken));
+addTokens(spltokens.map(convertSplTokens));
 
 type TokensListOptions = {
   withDelisted: boolean;
@@ -416,6 +418,40 @@ function convertElrondESDTTokens([
       {
         name,
         code: name,
+        magnitude: decimals,
+      },
+    ],
+  };
+}
+
+/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
+function convertSplTokens([
+  chainId,
+  name,
+  symbol,
+  address,
+  decimals,
+  enableCountervalues,
+]: SPLToken): TokenCurrency {
+  const chainIdToCurrencyId = {
+    101: "solana",
+    102: "solana_testnet",
+    103: "solana_devnet",
+  };
+  const currencyId = chainIdToCurrencyId[chainId];
+  return {
+    type: "TokenCurrency",
+    id: `solana/spl/${address}`,
+    contractAddress: address,
+    parentCurrency: getCryptoCurrencyById(currencyId),
+    name,
+    tokenType: "spl",
+    ticker: symbol,
+    disableCountervalue: !enableCountervalues,
+    units: [
+      {
+        name,
+        code: symbol,
         magnitude: decimals,
       },
     ],
