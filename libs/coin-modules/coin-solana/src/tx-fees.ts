@@ -48,13 +48,34 @@ const createDummyTx = (address: string, kind: TransactionModel["kind"]) => {
       return createDummyStakeUndelegateTx(address);
     case "stake.withdraw":
       return createDummyStakeWithdrawTx(address);
+    case "token.transfer":
+      return createDummyTokenTransferTx(address);
     case "stake.split":
     case "token.createATA":
-    case "token.transfer":
       throw new Error(`not implemented for <${kind}>`);
     default:
       return assertUnreachable(kind);
   }
+};
+
+// TODOSPL: make token transfer TX to estimate fees properly
+const createDummyTokenTransferTx = (address: string): Transaction => {
+  return {
+    ...createTransaction({} as any),
+    model: {
+      kind: "transfer",
+      uiState: {},
+      commandDescriptor: {
+        command: {
+          kind: "transfer",
+          amount: 0,
+          recipient: address,
+          sender: address,
+        },
+        ...commandDescriptorCommons,
+      },
+    },
+  };
 };
 
 const createDummyTransferTx = (address: string): Transaction => {
