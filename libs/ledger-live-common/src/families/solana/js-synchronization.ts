@@ -231,9 +231,7 @@ export const getAccountShapeWithAPI = async (
   }
 
   const shape: Partial<SolanaAccount> = {
-    // uncomment when tokens are supported
-    // subAccounts as undefined makes TokenList disappear in desktop
-    //subAccounts: nextSubAccs,
+    subAccounts: nextSubAccs,
     id: mainAccountId,
     blockHeight,
     balance: mainAccBalance.plus(totalStakedBalance),
@@ -678,14 +676,10 @@ async function getAccount(
 }> {
   const balanceLamportsWithContext = await api.getBalanceAndContext(address);
 
-  const tokenAccounts = [];
-
-  // no tokens for the first release
-  /*await api
+  const tokenAccounts = await api
     .getParsedTokenAccountsByOwner(address)
-    .then((res) => res.value)
+    .then(res => res.value)
     .then(map(toTokenAccountWithInfo));
-    */
 
   const stakeAccountsRaw = [
     ...(await api.getStakeAccountsByStakeAuth(address)),
