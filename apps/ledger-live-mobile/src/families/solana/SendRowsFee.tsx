@@ -39,7 +39,7 @@ export default function SolanaFeeRow({ account, parentAccount, status }: Props) 
 
   const fees = (status as SolanaTransactionStatus).estimatedFees;
 
-  const unit = getAccountUnit(account.type === "TokenAccount" ? parentAccount : account);
+  const unit = getAccountUnit(account.type === "TokenAccount" ? parentAccount || account : account);
   const currency = getAccountCurrency(account);
 
   return (

@@ -19,7 +19,7 @@ import {
   acceptTransferTokensWithATACreationTransaction,
   acceptTransferTransaction,
 } from "./speculos-deviceActions";
-import { assertUnreachable } from "./utils";
+import { SYSTEM_ACCOUNT_RENT_EXEMPT, assertUnreachable } from "./utils";
 import { getCurrentSolanaPreloadData } from "./js-preload-data";
 import { sample } from "lodash/fp";
 import BigNumber from "bignumber.js";
@@ -78,8 +78,16 @@ const solana: AppSpec<Transaction> = {
         };
       },
       test: input => {
-        const { account } = input;
-        botTest("account balance should be zero", () =>
+        const { accountBeforeTransaction, account, operation } = input;
+        const extimatedMaxSpendable = BigNumber.max(
+          accountBeforeTransaction.spendableBalance.minus(SYSTEM_ACCOUNT_RENT_EXEMPT),
+          0,
+        ).toNumber();
+
+        botTest("operation value should be estimated max spendable", () =>
+          expect(operation.value.toNumber()).toBe(extimatedMaxSpendable),
+        );
+        botTest("account spendableBalance should be zero", () =>
           expect(account.spendableBalance.toNumber()).toBe(0),
         );
         expectCorrectBalanceChange(input);

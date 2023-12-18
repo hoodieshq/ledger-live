@@ -28,7 +28,7 @@ function formatAmount(c: CryptoCurrency | TokenCurrency, amount: number) {
 // There's a bug on the device where the token currency is being displayed as "???"
 // Temporarily replace "0.05 USDC" on "0.05 ???" to pass tokens tests
 function formatTokenAmount(c: TokenCurrency, amount: number) {
-  return formatAmount(c, amount).replace(/\D+$/, "???");
+  return formatAmount(c, amount).replace(/\D+$/, " ???");
 }
 
 function findTokenAccount(account: Account, id: string) {
