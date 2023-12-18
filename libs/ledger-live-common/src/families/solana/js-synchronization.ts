@@ -34,13 +34,7 @@ import {
   sum,
 } from "lodash/fp";
 import { parseQuiet } from "./api/chain/program";
-import {
-  InflationReward,
-  ParsedTransactionMeta,
-  ParsedMessageAccount,
-  ParsedTransaction,
-  StakeActivationData,
-} from "@solana/web3.js";
+import { InflationReward, ParsedTransaction, StakeActivationData } from "@solana/web3.js";
 import { ChainAPI } from "./api";
 import { ParsedOnChainTokenAccountWithInfo, toTokenAccountWithInfo } from "./api/chain/web3";
 import { drainSeq } from "./utils";
@@ -352,26 +346,7 @@ function txToMainAccOperation(
     balanceDelta,
   });
 
-  const accum = {
-    senders: [] as string[],
-    recipients: [] as string[],
-  };
-
-  const { senders, recipients } =
-    opType === "IN" || opType === "OUT"
-      ? message.accountKeys.reduce((acc, account, i) => {
-          const delta = new BigNumber(postBalances[i]).minus(new BigNumber(preBalances[i]));
-          if (delta.lt(0)) {
-            const shouldConsiderAsSender = i > 0 || !delta.negated().eq(txFee);
-            if (shouldConsiderAsSender) {
-              acc.senders.push(account.pubkey.toBase58());
-            }
-          } else if (delta.gt(0)) {
-            acc.recipients.push(account.pubkey.toBase58());
-          }
-          return acc;
-        }, accum)
-      : accum;
+  const { senders, recipients } = getMainSendersRecipients(tx, opType, txFee, accountAddress);
 
   const txHash = tx.info.signature;
   const txDate = new Date(tx.info.blockTime * 1000);
@@ -483,10 +458,7 @@ function txToTokenAccOperation(
 
   const txHash = tx.info.signature;
 
-  const { senders, recipients } = getTokenSendersRecipients({
-    meta: tx.parsed.meta,
-    accounts: tx.parsed.transaction.message.accountKeys,
-  });
+  const { senders, recipients } = getTokenSendersRecipients(tx);
 
   return {
     id: encodeOperationId(accountId, txHash, opType),
@@ -516,7 +488,7 @@ function getMainAccOperationType({
   isFeePayer: boolean;
   balanceDelta: BigNumber;
 }): OperationType {
-  const type = getMainAccOperationTypeFromTx(tx);
+  const type = getMainAccOperationTypeFromTx(tx, isFeePayer);
 
   if (type !== undefined) {
     return type;
@@ -531,12 +503,66 @@ function getMainAccOperationType({
     : "NONE";
 }
 
-function getMainAccOperationTypeFromTx(tx: ParsedTransaction): OperationType | undefined {
-  const { instructions } = tx.message;
+function getMainSendersRecipients(
+  tx: TransactionDescriptor,
+  opType: OperationType,
+  txFee: BigNumber,
+  accountAddress: string,
+) {
+  const initialSendersRecipients = {
+    senders: [] as string[],
+    recipients: [] as string[],
+  };
+  if (!tx.parsed.meta) {
+    return initialSendersRecipients;
+  }
 
-  const parsedIxs = instructions
-    .map(ix => parseQuiet(ix))
-    .filter(({ program }) => program !== "spl-memo");
+  const { message } = tx.parsed.transaction;
+  const { postTokenBalances, preBalances, postBalances } = tx.parsed.meta;
+
+  if (opType === "FEES") {
+    // SPL transfer to existing ATA. FEES operation is shown for the main account
+    return getTokenSendersRecipients(tx);
+  }
+
+  if (opType === "OPT_IN") {
+    // Associated token account created
+    const incomingTokens =
+      postTokenBalances?.filter(tokenBalance => tokenBalance.owner === accountAddress) || [];
+
+    initialSendersRecipients.senders = incomingTokens.map(token => token.mint);
+    initialSendersRecipients.recipients = incomingTokens.map(token => {
+      return message.accountKeys[token.accountIndex].pubkey.toBase58();
+    }) || [accountAddress];
+
+    return initialSendersRecipients;
+  }
+
+  if (opType === "IN" || opType === "OUT") {
+    const isAccFeePayer = (accIndex: number) => accIndex === 0;
+
+    return message.accountKeys.reduce((acc, account, i) => {
+      const delta = new BigNumber(postBalances[i]).minus(new BigNumber(preBalances[i]));
+      if (delta.lt(0)) {
+        const shouldConsiderAsSender = !isAccFeePayer(i) || !delta.negated().eq(txFee);
+        if (shouldConsiderAsSender) {
+          acc.senders.push(account.pubkey.toBase58());
+        }
+      } else if (delta.gt(0)) {
+        acc.recipients.push(account.pubkey.toBase58());
+      }
+      return acc;
+    }, initialSendersRecipients);
+  }
+
+  return initialSendersRecipients;
+}
+
+function getMainAccOperationTypeFromTx(
+  tx: ParsedTransaction,
+  isFeePayer: boolean,
+): OperationType | undefined {
+  const parsedIxs = parseTxInstructions(tx);
 
   if (parsedIxs.length === 3) {
     const [first, second, third] = parsedIxs;
@@ -560,7 +586,7 @@ function getMainAccOperationTypeFromTx(tx: ParsedTransaction): OperationType | u
       case "spl-associated-token-account":
         switch (first.instruction.type) {
           case "associate":
-            return "OPT_IN";
+            return isFeePayer ? "OPT_OUT" : "OPT_IN";
         }
         // needed for lint
         break;
@@ -588,36 +614,34 @@ function getMainAccOperationTypeFromTx(tx: ParsedTransaction): OperationType | u
   return undefined;
 }
 
-function getTokenSendersRecipients({
-  meta,
-  accounts,
-}: {
-  meta: ParsedTransactionMeta;
-  accounts: ParsedMessageAccount[];
-}) {
-  const { preTokenBalances, postTokenBalances } = meta;
-  return accounts.reduce(
-    (accum, account, i) => {
-      const preTokenBalance = preTokenBalances?.find(b => b.accountIndex === i);
-      const postTokenBalance = postTokenBalances?.find(b => b.accountIndex === i);
-      if (preTokenBalance && postTokenBalance) {
-        const tokenDelta = new BigNumber(postTokenBalance.uiTokenAmount.amount).minus(
-          new BigNumber(preTokenBalance.uiTokenAmount.amount),
-        );
+function getTokenSendersRecipients(tx: TransactionDescriptor) {
+  const initialSendersRecipients = {
+    senders: [] as string[],
+    recipients: [] as string[],
+  };
 
-        if (tokenDelta.lt(0)) {
-          accum.senders.push(account.pubkey.toBase58());
-        } else if (tokenDelta.gt(0)) {
-          accum.recipients.push(account.pubkey.toBase58());
-        }
+  if (!tx.parsed.meta) {
+    return initialSendersRecipients;
+  }
+
+  const accounts = tx.parsed.transaction.message.accountKeys;
+  const { preTokenBalances, postTokenBalances } = tx.parsed.meta;
+
+  return accounts.reduce((accum, account, i) => {
+    const preTokenBalance = preTokenBalances?.find(b => b.accountIndex === i);
+    const postTokenBalance = postTokenBalances?.find(b => b.accountIndex === i);
+    if (preTokenBalance || postTokenBalance) {
+      const tokenDelta = new BigNumber(postTokenBalance?.uiTokenAmount.amount ?? 0).minus(
+        new BigNumber(preTokenBalance?.uiTokenAmount.amount ?? 0),
+      );
+      if (tokenDelta.lt(0)) {
+        accum.senders.push(account.pubkey.toBase58());
+      } else if (tokenDelta.gt(0)) {
+        accum.recipients.push(account.pubkey.toBase58());
       }
-      return accum;
-    },
-    {
-      senders: [] as string[],
-      recipients: [] as string[],
-    },
-  );
+    }
+    return accum;
+  }, initialSendersRecipients);
 }
 
 function getTokenAccOperationType({
@@ -627,23 +651,26 @@ function getTokenAccOperationType({
   tx: ParsedTransaction;
   delta: BigNumber;
 }): OperationType {
-  const { instructions } = tx.message;
-  const [mainIx, ...otherIxs] = instructions
-    .map(ix => parseQuiet(ix))
-    .filter(({ program }) => program !== "spl-memo");
+  const [mainIx, ...otherIxs] = parseTxInstructions(tx);
 
   if (mainIx !== undefined && otherIxs.length === 0) {
     switch (mainIx.program) {
       case "spl-associated-token-account":
         switch (mainIx.instruction.type) {
           case "associate":
-            return "OPT_IN";
+            return "NONE"; // ATA opt-in operation is added to the main account
         }
     }
   }
 
   const fallbackType = delta.eq(0) ? "NONE" : delta.gt(0) ? "IN" : "OUT";
   return fallbackType;
+}
+
+function parseTxInstructions(tx: ParsedTransaction) {
+  return tx.message.instructions
+    .map(ix => parseQuiet(ix))
+    .filter(({ program }) => program !== "spl-memo");
 }
 
 function dropMemoLengthPrefixIfAny(memo: string) {
