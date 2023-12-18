@@ -1,6 +1,6 @@
 import invariant from "invariant";
 import expect from "expect";
-import { getCryptoCurrencyById } from "@ledgerhq/cryptoassets";
+import { getCryptoCurrencyById, listTokensForCryptoCurrency } from "@ledgerhq/cryptoassets";
 import { DeviceModelId } from "@ledgerhq/devices";
 import {
   botTest,
@@ -15,12 +15,17 @@ import {
   acceptStakeDelegateTransaction,
   acceptStakeUndelegateTransaction,
   acceptStakeWithdrawTransaction,
+  acceptTransferTokensTransaction,
+  acceptTransferTokensWithATACreationTransaction,
   acceptTransferTransaction,
 } from "./speculos-deviceActions";
 import { assertUnreachable } from "./utils";
 import { getCurrentSolanaPreloadData } from "./js-preload-data";
 import { sample } from "lodash/fp";
 import BigNumber from "bignumber.js";
+import { CryptoCurrency } from "@ledgerhq/types-cryptoassets";
+import { Account, TokenAccount } from "@ledgerhq/types-live";
+import { SolanaRecipientAssociatedTokenAccountWillBeFunded } from "./errors";
 
 const maxAccount = 9;
 
@@ -461,6 +466,82 @@ const solana: AppSpec<Transaction> = {
         botTest("delegation exists", () => expect(delegationExists).toBe(false));
       },
     },
+    {
+      name: "Transfer ~50% USDC with ATA creation",
+      maxRun: 1,
+      deviceAction: acceptTransferTokensWithATACreationTransaction,
+      transaction: ({ account, bridge, siblings }) => {
+        const usdcToken = findUsdcTokenCurrency(account.currency);
+        invariant(usdcToken, "USDC token not listed");
+
+        const senderAccWithUsdc = findTokenSubAccount(account, usdcToken.id);
+        invariant(senderAccWithUsdc, "Sender account doesn't have USDC ATA");
+
+        const siblingWithoutUsdc = siblings.find(acc => !findTokenSubAccount(acc, usdcToken.id));
+        invariant(siblingWithoutUsdc, "Recipient without USDC ATA was not found");
+
+        const amount = senderAccWithUsdc.balance.div(1.9 + 0.2 * Math.random()).integerValue();
+        const recipient = siblingWithoutUsdc.freshAddress;
+        const transaction = bridge.createTransaction(account);
+        const subAccountId = senderAccWithUsdc.id;
+
+        return {
+          transaction,
+          updates: [{ subAccountId }, { recipient }, { amount }],
+        };
+      },
+      expectStatusWarnings: _ => {
+        return {
+          recipient: new SolanaRecipientAssociatedTokenAccountWillBeFunded(),
+        };
+      },
+      test: ({ account, accountBeforeTransaction, status }) => {
+        const usdcTokenAccAfterTx = findUsdcTokenAccount(account);
+        const usdcTokenAccBeforeTx = findUsdcTokenAccount(accountBeforeTransaction);
+
+        botTest("usdc balance decreased with operation", () =>
+          expect(usdcTokenAccAfterTx?.balance.toString()).toBe(
+            usdcTokenAccBeforeTx?.balance.minus(status.amount).toString(),
+          ),
+        );
+      },
+    },
+    {
+      name: "Transfer ~50% USDC to existing ATA",
+      maxRun: 1,
+      deviceAction: acceptTransferTokensTransaction,
+      transaction: ({ account, bridge, siblings }) => {
+        const usdcToken = findUsdcTokenCurrency(account.currency);
+        invariant(usdcToken, "USDC token not listed");
+
+        const senderAccWithUsdc = findTokenSubAccount(account, usdcToken.id);
+        invariant(senderAccWithUsdc, "Sender account doesn't have USDC token ATA");
+
+        const siblingWithUsdc = siblings.find(acc => findTokenSubAccount(acc, usdcToken.id));
+        invariant(siblingWithUsdc, "No siblings with USDC token ATA");
+
+        const amount = senderAccWithUsdc.balance.div(1.9 + 0.2 * Math.random()).integerValue();
+        const recipient = siblingWithUsdc.freshAddress;
+
+        const transaction = bridge.createTransaction(account);
+        const subAccountId = senderAccWithUsdc.id;
+
+        return {
+          transaction,
+          updates: [{ subAccountId }, { recipient }, { amount }],
+        };
+      },
+      test: ({ account, accountBeforeTransaction, status }) => {
+        const usdcTokenAccAfterTx = findUsdcTokenAccount(account);
+        const usdcTokenAccBeforeTx = findUsdcTokenAccount(accountBeforeTransaction);
+
+        botTest("usdc balance decreased with operation", () =>
+          expect(usdcTokenAccAfterTx?.balance.toString()).toBe(
+            usdcTokenAccBeforeTx?.balance.minus(status.amount).toString(),
+          ),
+        );
+      },
+    },
   ],
 };
 
@@ -507,6 +588,23 @@ function expectCorrectBalanceChange(input: TransactionTestInput<Transaction>) {
       accountBeforeTransaction.balance.minus(operation.value).toNumber(),
     ),
   );
+}
+
+function findUsdcTokenCurrency(currency: CryptoCurrency) {
+  const splTokens = listTokensForCryptoCurrency(currency);
+  return splTokens.find(token => token.ticker === "USDC");
+}
+
+function findTokenSubAccount(account: Account, tokenId: string) {
+  return account.subAccounts?.find(
+    acc => acc.type === "TokenAccount" && acc.token.id === tokenId,
+  ) as TokenAccount | undefined;
+}
+
+function findUsdcTokenAccount(account: Account) {
+  const usdcToken = findUsdcTokenCurrency(account.currency);
+  if (!usdcToken) throw new Error("USDC token not found");
+  return findTokenSubAccount(account, usdcToken.id);
 }
 
 export default {

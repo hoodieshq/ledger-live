@@ -488,7 +488,7 @@ function getMainAccOperationType({
   isFeePayer: boolean;
   balanceDelta: BigNumber;
 }): OperationType {
-  const type = getMainAccOperationTypeFromTx(tx, isFeePayer);
+  const type = getMainAccOperationTypeFromTx(tx);
 
   if (type !== undefined) {
     return type;
@@ -558,10 +558,7 @@ function getMainSendersRecipients(
   return initialSendersRecipients;
 }
 
-function getMainAccOperationTypeFromTx(
-  tx: ParsedTransaction,
-  isFeePayer: boolean,
-): OperationType | undefined {
+function getMainAccOperationTypeFromTx(tx: ParsedTransaction): OperationType | undefined {
   const parsedIxs = parseTxInstructions(tx);
 
   if (parsedIxs.length === 3) {
@@ -586,7 +583,7 @@ function getMainAccOperationTypeFromTx(
       case "spl-associated-token-account":
         switch (first.instruction.type) {
           case "associate":
-            return isFeePayer ? "OPT_OUT" : "OPT_IN";
+            return "OPT_IN";
         }
         // needed for lint
         break;
