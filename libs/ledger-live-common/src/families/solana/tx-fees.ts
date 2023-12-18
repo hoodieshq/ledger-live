@@ -58,26 +58,6 @@ const createDummyTx = (address: string, kind: TransactionModel["kind"]) => {
   }
 };
 
-// TODOSPL: make token transfer TX to estimate fees properly
-const createDummyTokenTransferTx = (address: string): Transaction => {
-  return {
-    ...createTransaction({} as any),
-    model: {
-      kind: "transfer",
-      uiState: {},
-      commandDescriptor: {
-        command: {
-          kind: "transfer",
-          amount: 0,
-          recipient: address,
-          sender: address,
-        },
-        ...commandDescriptorCommons,
-      },
-    },
-  };
-};
-
 const createDummyTransferTx = (address: string): Transaction => {
   return {
     ...createTransaction({} as any),
@@ -171,6 +151,32 @@ const createDummyStakeWithdrawTx = (address: string): Transaction => {
           authorizedAccAddr: address,
           stakeAccAddr: randomAddresses[0],
           toAccAddr: randomAddresses[1],
+        },
+        ...commandDescriptorCommons,
+      },
+    },
+  };
+};
+
+const createDummyTokenTransferTx = (address: string): Transaction => {
+  return {
+    ...createTransaction({} as any),
+    model: {
+      kind: "token.transfer",
+      uiState: {} as any,
+      commandDescriptor: {
+        command: {
+          kind: "token.transfer",
+          amount: 0,
+          mintAddress: randomAddresses[0],
+          mintDecimals: 0,
+          ownerAddress: address,
+          ownerAssociatedTokenAccountAddress: randomAddresses[1],
+          recipientDescriptor: {
+            walletAddress: randomAddresses[1],
+            tokenAccAddress: randomAddresses[2],
+            shouldCreateAsAssociatedTokenAccount: true,
+          },
         },
         ...commandDescriptorCommons,
       },
