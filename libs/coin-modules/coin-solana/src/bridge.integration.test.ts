@@ -28,7 +28,7 @@ import {
 import { encodeAccountIdWithTokenAccountAddress, MAX_MEMO_LENGTH } from "./logic";
 import createTransaction from "./js-createTransaction";
 import { compact } from "lodash/fp";
-import { assertUnreachable } from "./utils";
+import { SYSTEM_ACCOUNT_RENT_EXEMPT, assertUnreachable } from "./utils";
 import { getEnv } from "@ledgerhq/live-env";
 import { ChainAPI } from "./api";
 import {
@@ -67,7 +67,7 @@ const testOnChainData = {
   validatorAddress: "9QU2QSxhb24FUX3Tu2FpczXjpK3VYrvRudywSZaM29mF",
   fees: {
     stakeAccountRentExempt: 2282880,
-    systemAccountRentExempt: 890880,
+    systemAccountRentExempt: SYSTEM_ACCOUNT_RENT_EXEMPT,
     lamportsPerSignature: 5000,
   },
   // ---  maybe outdated or not real, fine for tests ---
