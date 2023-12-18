@@ -19,11 +19,9 @@ import {
   SolanaAddressOffEd25519,
   SolanaInvalidValidator,
   SolanaMemoIsTooLong,
-  /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
   SolanaRecipientAssociatedTokenAccountWillBeFunded,
   SolanaStakeAccountNotFound,
   SolanaStakeAccountRequired,
-  /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
   SolanaTokenAccountHoldsAnotherToken,
   SolanaValidatorRequired,
 } from "./errors";
@@ -39,9 +37,17 @@ import {
 } from "./errors";
 import getTransactionStatus from "./js-getTransactionStatus";
 import { prepareTransaction } from "./js-prepareTransaction";
-import type { Account, CurrenciesData, DatasetTest } from "@ledgerhq/types-live";
+import type {
+  Account,
+  AccountRaw,
+  CurrenciesData,
+  DatasetTest,
+  TokenAccountRaw,
+} from "@ledgerhq/types-live";
 import { encodeAccountId } from "@ledgerhq/coin-framework/account/accountId";
 import { LATEST_BLOCKHASH_MOCK } from "./api/chain";
+import { TokenCurrency } from "@ledgerhq/types-cryptoassets";
+import { findTokenByAddressInCurrency } from "@ledgerhq/cryptoassets";
 
 // do not change real properties or the test will break
 const testOnChainData = {
@@ -77,11 +83,15 @@ const mainAccId = encodeAccountId({
   derivationMode: "solanaMain",
 });
 
-/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 const wSolSubAccId = encodeAccountIdWithTokenAccountAddress(
   mainAccId,
   testOnChainData.wSolSenderAssocTokenAccAddress,
 );
+
+const wSolToken = findTokenByAddressInCurrency(
+  "So11111111111111111111111111111111111111112",
+  "solana",
+) as TokenCurrency;
 
 const fees = (signatureCount: number) =>
   new BigNumber(signatureCount * testOnChainData.fees.lamportsPerSignature);
@@ -128,7 +138,7 @@ const solana: CurrenciesData<Transaction> = {
         },
         ...transferTests(),
         ...stakingTests(),
-        //...tokenTests()
+        ...tokenTests(),
       ],
     },
   ],
@@ -141,7 +151,7 @@ export const dataset: DatasetTest<Transaction> = {
   },
 };
 
-function makeAccount(freshAddress: string) {
+function makeAccount(freshAddress: string): AccountRaw {
   return {
     id: mainAccId,
     seedIdentifier: "",
@@ -155,6 +165,19 @@ function makeAccount(freshAddress: string) {
     currencyId: "solana",
     lastSyncDate: "",
     balance: "0",
+    subAccounts: [makeSubTokenAccount()],
+  };
+}
+
+function makeSubTokenAccount(): TokenAccountRaw {
+  return {
+    type: "TokenAccountRaw",
+    id: wSolSubAccId,
+    parentId: mainAccId,
+    tokenId: wSolToken.id,
+    balance: "0",
+    operations: [],
+    pendingOperations: [],
   };
 }
 
@@ -168,15 +191,12 @@ type TransactionTestSpec = Exclude<
 
 function recipientRequired(): TransactionTestSpec[] {
   const models: TransactionModel[] = [
-    // uncomment when tokens are supported
-    /*
     {
       kind: "token.transfer",
       uiState: {
-        subAccountId: "",
+        subAccountId: wSolSubAccId,
       },
     },
-    */
     {
       kind: "transfer",
       uiState: {},
@@ -429,8 +449,6 @@ function transferTests(): TransactionTestSpec[] {
   ];
 }
 
-// uncomment when tokens are supported
-/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 function tokenTests(): TransactionTestSpec[] {
   return [
     {
@@ -495,7 +513,7 @@ function tokenTests(): TransactionTestSpec[] {
         warnings: {},
         estimatedFees: fees(1),
         amount: testOnChainData.wSolSenderAssocTokenAccBalance.dividedBy(2),
-        totalSpent: zero,
+        totalSpent: testOnChainData.wSolSenderAssocTokenAccBalance.dividedBy(2),
       },
     },
     {
@@ -518,7 +536,7 @@ function tokenTests(): TransactionTestSpec[] {
         warnings: {},
         estimatedFees: fees(1),
         amount: testOnChainData.wSolSenderAssocTokenAccBalance.dividedBy(2),
-        totalSpent: zero,
+        totalSpent: testOnChainData.wSolSenderAssocTokenAccBalance.dividedBy(2),
       },
     },
     {
@@ -537,8 +555,7 @@ function tokenTests(): TransactionTestSpec[] {
       expectedStatus: {
         errors: {},
         warnings: {
-          recipient: new SolanaAccountNotFunded(),
-          recipientAssociatedTokenAccount: new SolanaRecipientAssociatedTokenAccountWillBeFunded(),
+          recipient: new SolanaRecipientAssociatedTokenAccountWillBeFunded(),
         },
         // this fee is dynamic, skip
         //estimatedFees: new BigNumber(2044280),

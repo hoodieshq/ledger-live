@@ -109,7 +109,7 @@ export const getAccountShapeWithAPI = async (
 
     const subAcc = subAccByMint.get(mint);
 
-    const lastSyncedTxSignature = subAcc?.operations?.[0].hash;
+    const lastSyncedTxSignature = subAcc?.operations?.[0]?.hash;
 
     const txs = await getTransactions(
       assocTokenAcc.onChainAcc.pubkey.toBase58(),
