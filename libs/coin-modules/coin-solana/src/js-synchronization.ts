@@ -42,11 +42,7 @@ import {
   StakeActivationData,
 } from "@solana/web3.js";
 import { ChainAPI } from "./api";
-import {
-  ParsedOnChainTokenAccountWithInfo,
-  /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-  toTokenAccountWithInfo,
-} from "./api/chain/web3";
+import { ParsedOnChainTokenAccountWithInfo, toTokenAccountWithInfo } from "./api/chain/web3";
 import { drainSeq } from "./utils";
 import { estimateTxFee } from "./tx-fees";
 import { SolanaAccount, SolanaOperationExtra, SolanaStake } from "./types";
