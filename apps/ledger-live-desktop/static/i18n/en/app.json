@@ -5912,6 +5912,9 @@
     "SolanaAccountNotFunded": {
       "title": "Account not funded"
     },
+    "SolanaAssociatedTokenAccountWillBeFunded": {
+      "title": "Account will be funded"
+    },
     "SolanaMemoIsTooLong": {
       "title": "Memo is too long. Max length is {{maxLength}}"
     },
