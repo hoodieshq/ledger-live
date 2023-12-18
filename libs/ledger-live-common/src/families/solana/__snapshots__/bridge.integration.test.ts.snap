@@ -149,7 +149,9 @@ exports[`solana currency bridge scanAccounts solana seed 1 2`] = `
       "hash": "A29zPnK1jPr2tGziTnaAvSnadYR2kLCv9sPywj9FJsaEFjtpwmUonspN3WJgz4u6XWmjtVpoFsDrygEnvW51cgk",
       "id": "js:2:solana:AQbkEagmPgmsdAfS4X8V8UyJnXXjVPMvjeD15etqQ3Jh:solanaMain+8RtwWeqdFz4EFuZU3MAadfYMWSdRMamjFrfq6BXkHuNN-A29zPnK1jPr2tGziTnaAvSnadYR2kLCv9sPywj9FJsaEFjtpwmUonspN3WJgz4u6XWmjtVpoFsDrygEnvW51cgk-IN",
       "operator": undefined,
-      "recipients": [],
+      "recipients": [
+        "8RtwWeqdFz4EFuZU3MAadfYMWSdRMamjFrfq6BXkHuNN",
+      ],
       "senders": [],
       "standard": undefined,
       "tokenId": undefined,
