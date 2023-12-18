@@ -31,7 +31,7 @@ type Props = {
   StackNavigatorProps<BaseNavigatorStackParamList>
 >;
 
-export default function SolanaFeeRow({ account, status }: Props) {
+export default function SolanaFeeRow({ account, parentAccount, status }: Props) {
   const { colors } = useTheme();
   const extraInfoFees = useCallback(() => {
     Linking.openURL(urls.solana.supportPage);
@@ -39,7 +39,7 @@ export default function SolanaFeeRow({ account, status }: Props) {
 
   const fees = (status as SolanaTransactionStatus).estimatedFees;
 
-  const unit = getAccountUnit(account);
+  const unit = getAccountUnit(account.type === "TokenAccount" ? parentAccount : account);
   const currency = getAccountCurrency(account);
 
   return (
