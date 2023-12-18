@@ -754,6 +754,9 @@
     "SolanaAccountNotFunded": {
       "title": "Account not funded"
     },
+    "SolanaAssociatedTokenAccountWillBeFunded": {
+      "title": "Account will be funded"
+    },
     "SolanaAddressOfEd25519": {
       "title": "Address off ed25519 curve"
     },
