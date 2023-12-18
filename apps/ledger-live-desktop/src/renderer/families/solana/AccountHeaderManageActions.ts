@@ -38,6 +38,10 @@ const AccountHeaderActions: SolanaFamily["accountHeaderManageActions"] = ({
     }
   }, [account, dispatch, source, solanaResources, mainAccount]);
 
+  if (account.type === "TokenAccount") {
+    return null;
+  }
+
   return [
     {
       key: "Stake",
