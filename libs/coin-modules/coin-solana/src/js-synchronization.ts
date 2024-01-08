@@ -39,7 +39,7 @@ import { ChainAPI } from "./api";
 import { ParsedOnChainTokenAccountWithInfo, toTokenAccountWithInfo } from "./api/chain/web3";
 import { drainSeq } from "./utils";
 import { estimateTxFee } from "./tx-fees";
-import { SolanaAccount, SolanaOperationExtra, SolanaStake } from "./types";
+import { SolanaAccount, SolanaOperationExtra, SolanaStake, SolanaTokenAccount } from "./types";
 import { Account, Operation, OperationType, TokenAccount } from "@ledgerhq/types-live";
 import { DelegateInfo, WithdrawInfo } from "./api/chain/instruction/stake/types";
 
@@ -251,7 +251,7 @@ function newSubAcc({
   mainAccountId: string;
   assocTokenAcc: OnChainTokenAccount;
   txs: TransactionDescriptor[];
-}): TokenAccount {
+}): SolanaTokenAccount {
   const firstTx = txs[txs.length - 1];
 
   const creationDate = new Date((firstTx.info.blockTime ?? Date.now() / 1000) * 1000);
@@ -282,6 +282,7 @@ function newSubAcc({
     spendableBalance: balance,
     swapHistory: [],
     token: tokenCurrency,
+    state: assocTokenAcc.info.state,
     type: "TokenAccount",
   };
 }
@@ -294,7 +295,7 @@ function patchedSubAcc({
   subAcc: TokenAccount;
   assocTokenAcc: OnChainTokenAccount;
   txs: TransactionDescriptor[];
-}): TokenAccount {
+}): SolanaTokenAccount {
   const balance = new BigNumber(assocTokenAcc.info.tokenAmount.amount);
 
   const newOps = compact(txs.map(tx => txToTokenAccOperation(tx, assocTokenAcc, subAcc.id)));
@@ -306,6 +307,7 @@ function patchedSubAcc({
     balance,
     spendableBalance: balance,
     operations: totalOps,
+    state: assocTokenAcc.info.state,
   };
 }
 
@@ -590,6 +592,10 @@ function getMainAccOperationTypeFromTx(tx: ParsedTransaction): OperationType | u
         switch (first.instruction.type) {
           case "closeAccount":
             return "OPT_OUT";
+          case "freezeAccount":
+            return "FREEZE";
+          case "thawAccount":
+            return "UNFREEZE";
         }
         break;
       case "stake":
@@ -655,6 +661,14 @@ function getTokenAccOperationType({
         switch (mainIx.instruction.type) {
           case "associate":
             return "NONE"; // ATA opt-in operation is added to the main account
+        }
+        break;
+      case "spl-token":
+        switch (mainIx.instruction.type) {
+          case "freezeAccount":
+            return "FREEZE";
+          case "thawAccount":
+            return "UNFREEZE";
         }
     }
   }
