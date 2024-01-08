@@ -3674,6 +3674,9 @@
           }
         }
       }
+    },
+    "token": {
+      "frozenStateWarning": "Account assets are frozen!"
     }
   },
   "ethereum": {
@@ -5914,6 +5917,12 @@
     },
     "SolanaAssociatedTokenAccountWillBeFunded": {
       "title": "Account will be funded"
+    },
+    "SolanaTokenAccountFrozen": {
+      "title": "Account assets are frozen"
+    },
+    "SolanaTokenAccounNotInitialized": {
+      "title": "Account not initialized"
     },
     "SolanaMemoIsTooLong": {
       "title": "Memo is too long. Max length is {{maxLength}}"

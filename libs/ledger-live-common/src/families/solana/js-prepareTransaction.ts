@@ -17,6 +17,7 @@ import {
 } from "./api/chain/web3";
 import {
   SolanaAccountNotFunded,
+  SolanaTokenAccountFrozen,
   SolanaAddressOffEd25519,
   SolanaInvalidValidator,
   SolanaMemoIsTooLong,
@@ -44,6 +45,7 @@ import type {
   CommandDescriptor,
   SolanaAccount,
   SolanaStake,
+  SolanaTokenAccount,
   StakeCreateAccountTransaction,
   StakeDelegateTransaction,
   StakeSplitTransaction,
@@ -124,6 +126,10 @@ const deriveTokenTransferCommandDescriptor = async (
 
   if (!subAccount || subAccount.type !== "TokenAccount") {
     throw new Error("subaccount not found");
+  }
+
+  if ((subAccount as SolanaTokenAccount)?.state === "frozen") {
+    errors.amount = new SolanaTokenAccountFrozen();
   }
 
   await validateRecipientCommon(mainAccount, tx, errors, warnings, api);
@@ -240,6 +246,9 @@ async function getTokenRecipient(
   } else {
     if (recipientTokenAccount.mint.toBase58() !== mintAddress) {
       return new SolanaTokenAccountHoldsAnotherToken();
+    }
+    if (recipientTokenAccount.state === "frozen") {
+      return new SolanaTokenAccountFrozen();
     }
     if (recipientTokenAccount.state !== "initialized") {
       return new SolanaTokenAccounNotInitialized();
