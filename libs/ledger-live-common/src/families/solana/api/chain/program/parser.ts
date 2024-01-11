@@ -1,4 +1,8 @@
-import { ParsedInstruction, PartiallyDecodedInstruction } from "@solana/web3.js";
+import {
+  ParsedInstruction,
+  PartiallyDecodedInstruction,
+  ComputeBudgetProgram,
+} from "@solana/web3.js";
 import { parseSplTokenInstruction, TokenInstructionDescriptor } from "../instruction/token";
 import { PARSED_PROGRAMS } from "./constants";
 import {
@@ -34,6 +38,11 @@ type ParsedProgram =
       program: "spl-token";
       title: string;
       instruction: TokenInstructionDescriptor;
+    }
+  | {
+      program: "compute-budget";
+      title: string;
+      instruction: undefined;
     }
   | {
       program: "unknown";
@@ -96,6 +105,13 @@ export const parse = (ix: ParsedInstruction | PartiallyDecodedInstruction): Pars
     }
   }
 
+  if (ComputeBudgetProgram.programId.equals(ix.programId)) {
+    return {
+      program: PARSED_PROGRAMS["COMPUTE_BUDGET"],
+      title: "Compute Budget",
+      instruction: undefined, // system instruction, doesn't make sense to parse in LL
+    };
+  }
   return unknown();
 };
 
