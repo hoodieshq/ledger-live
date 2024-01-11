@@ -14,8 +14,9 @@ import {
 } from "@solana/web3.js";
 import chunk from "lodash/chunk";
 import { ChainAPI } from ".";
-import { Awaited } from "../../logic";
+import { Awaited, getTokenAccountProgramId } from "../../logic";
 import {
+  SolanaTokenProgram,
   StakeCreateAccountCommand,
   StakeDelegateCommand,
   StakeSplitCommand,
@@ -27,9 +28,9 @@ import {
 } from "../../types";
 import { drainSeqAsyncGen } from "../../utils";
 import { parseTokenAccountInfo, tryParseAsTokenAccount, tryParseAsVoteAccount } from "./account";
-import { parseStakeAccountInfo } from "./account/parser";
+import { parseStakeAccountInfo, tryParseAsMintAccount } from "./account/parser";
 import { StakeAccountInfo } from "./account/stake";
-import { TokenAccountInfo } from "./account/token";
+import { MintAccountInfo, TokenAccountInfo } from "./account/token";
 import { VoteAccountInfo } from "./account/vote";
 
 const MEMO_PROGRAM_ID = "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr";
@@ -167,6 +168,7 @@ export const buildTokenTransferInstructions = (
     mintAddress,
     mintDecimals,
     memo,
+    tokenProgram,
   } = command;
   const ownerPubkey = new PublicKey(ownerAddress);
 
@@ -178,6 +180,8 @@ export const buildTokenTransferInstructions = (
 
   const mintPubkey = new PublicKey(mintAddress);
 
+  const programId = getTokenAccountProgramId(tokenProgram);
+
   if (recipientDescriptor.shouldCreateAsAssociatedTokenAccount) {
     instructions.push(
       createAssociatedTokenAccountInstruction(
@@ -185,6 +189,7 @@ export const buildTokenTransferInstructions = (
         destinationPubkey,
         destinationOwnerPubkey,
         mintPubkey,
+        programId,
       ),
     );
   }
@@ -197,6 +202,8 @@ export const buildTokenTransferInstructions = (
       ownerPubkey,
       amount,
       mintDecimals,
+      undefined,
+      programId,
     ),
   );
 
@@ -216,11 +223,17 @@ export const buildTokenTransferInstructions = (
 export async function findAssociatedTokenAccountPubkey(
   ownerAddress: string,
   mintAddress: string,
+  tokenProgram: SolanaTokenProgram,
 ): Promise<PublicKey> {
   const ownerPubKey = new PublicKey(ownerAddress);
   const mintPubkey = new PublicKey(mintAddress);
 
-  return getAssociatedTokenAddress(mintPubkey, ownerPubKey);
+  return getAssociatedTokenAddress(
+    mintPubkey,
+    ownerPubKey,
+    undefined,
+    getTokenAccountProgramId(tokenProgram),
+  );
 }
 
 export const getMaybeTokenAccount = async (
@@ -245,6 +258,29 @@ export async function getMaybeVoteAccount(
 
   return voteAccount;
 }
+
+export const getMaybeTokenMint = async (
+  address: string,
+  api: ChainAPI,
+): Promise<MintAccountInfo | undefined | Error> => {
+  const accInfo = await api.getAccountInfo(address);
+
+  const mint =
+    accInfo !== null && "parsed" in accInfo.data ? tryParseAsMintAccount(accInfo.data) : undefined;
+
+  return mint;
+};
+
+export const getMaybeTokenMintProgram = async (
+  address: string,
+  api: ChainAPI,
+): Promise<SolanaTokenProgram | undefined | Error> => {
+  const mintInfo = await api.getAccountInfo(address);
+
+  return mintInfo !== null && "parsed" in mintInfo.data
+    ? (mintInfo?.data.program as SolanaTokenProgram)
+    : undefined;
+};
 
 export function getStakeAccountMinimumBalanceForRentExemption(api: ChainAPI) {
   return api.getMinimumBalanceForRentExemption(StakeProgram.space);

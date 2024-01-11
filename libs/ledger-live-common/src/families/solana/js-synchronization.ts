@@ -39,7 +39,13 @@ import { ChainAPI } from "./api";
 import { ParsedOnChainTokenAccountWithInfo, toTokenAccountWithInfo } from "./api/chain/web3";
 import { drainSeq } from "./utils";
 import { estimateTxFee } from "./tx-fees";
-import { SolanaAccount, SolanaOperationExtra, SolanaStake, SolanaTokenAccount } from "./types";
+import {
+  SolanaAccount,
+  SolanaOperationExtra,
+  SolanaStake,
+  SolanaTokenAccount,
+  SolanaTokenProgram,
+} from "./types";
 import { Account, Operation, OperationType, TokenAccount } from "@ledgerhq/types-live";
 import { DelegateInfo, WithdrawInfo } from "./api/chain/instruction/stake/types";
 
@@ -91,7 +97,12 @@ export const getAccountShapeWithAPI = async (
       continue;
     }
 
-    const assocTokenAccAddress = await api.findAssocTokenAccAddress(mainAccAddress, mint);
+    const tokenProgram = accs[0].onChainAcc.account.data.program;
+    const assocTokenAccAddress = await api.findAssocTokenAccAddress(
+      mainAccAddress,
+      mint,
+      tokenProgram as SolanaTokenProgram,
+    );
 
     const assocTokenAcc = accs.find(
       ({ onChainAcc: { pubkey } }) => pubkey.toBase58() === assocTokenAccAddress,
@@ -282,6 +293,8 @@ function newSubAcc({
     spendableBalance: balance,
     starred: false,
     swapHistory: [],
+    tokenProgram: assocTokenAcc.onChainAcc.account.data.program as SolanaTokenProgram,
+    // extensions
     token: tokenCurrency,
     state: assocTokenAcc.info.state,
     type: "TokenAccount",
@@ -309,6 +322,7 @@ function patchedSubAcc({
     spendableBalance: balance,
     operations: totalOps,
     state: assocTokenAcc.info.state,
+    tokenProgram: assocTokenAcc.onChainAcc.account.data.program as SolanaTokenProgram,
   };
 }
 
@@ -603,6 +617,7 @@ function getMainAccOperationTypeFromTx(
         // needed for lint
         break;
       case "spl-token":
+      case "spl-token-2022":
         switch (first.instruction.type) {
           case "closeAccount":
             return "OPT_OUT";
@@ -679,6 +694,7 @@ function getTokenAccOperationType({
         }
         break;
       case "spl-token":
+      case "spl-token-2022":
         switch (mainIx.instruction.type) {
           case "freezeAccount":
             return "FREEZE";
@@ -731,6 +747,11 @@ async function getAccount(
     .then(res => res.value)
     .then(map(toTokenAccountWithInfo));
 
+  const token2022Accounts = await api
+    .getParsedToken2022AccountsByOwner(address)
+    .then(res => res.value)
+    .then(map(toTokenAccountWithInfo));
+
   const stakeAccountsRaw = [
     ...(await api.getStakeAccountsByStakeAuth(address)),
     ...(await api.getStakeAccountsByWithdrawAuth(address)),
@@ -767,7 +788,7 @@ async function getAccount(
   return {
     balance,
     blockHeight,
-    tokenAccounts,
+    tokenAccounts: [...tokenAccounts, ...token2022Accounts],
     stakes,
   };
 }

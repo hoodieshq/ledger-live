@@ -2,8 +2,9 @@ import { findTokenById } from "@ledgerhq/cryptoassets";
 import { PublicKey } from "@solana/web3.js";
 import { AccountLike, TokenAccount } from "@ledgerhq/types-live";
 import { StakeMeta } from "./api/chain/account/stake";
-import { SolanaStake, SolanaTokenAccount, StakeAction } from "./types";
+import { SolanaStake, SolanaTokenAccount, SolanaTokenProgram, StakeAction } from "./types";
 import { assertUnreachable } from "./utils";
+import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 
 export type Awaited<T> = T extends PromiseLike<infer U> ? U : T;
 
@@ -124,4 +125,8 @@ export function stakeActivePercent(stake: SolanaStake) {
 
 export function isTokenAccountFrozen(account: AccountLike) {
   return account.type === "TokenAccount" && (account as SolanaTokenAccount)?.state === "frozen";
+}
+
+export function getTokenAccountProgramId(program: SolanaTokenProgram): typeof TOKEN_PROGRAM_ID {
+  return program === "spl-token-2022" ? TOKEN_2022_PROGRAM_ID : TOKEN_PROGRAM_ID;
 }

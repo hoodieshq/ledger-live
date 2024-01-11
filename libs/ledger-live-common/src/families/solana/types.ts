@@ -84,6 +84,7 @@ export type TokenTransferCommand = {
   amount: number;
   mintAddress: string;
   mintDecimals: number;
+  tokenProgram: SolanaTokenProgram;
   memo?: string;
 };
 
@@ -258,8 +259,16 @@ export type SolanaAccount = Account & { solanaResources: SolanaResources };
 export type SolanaAccountRaw = AccountRaw & {
   solanaResources: SolanaResourcesRaw;
 };
-export type SolanaTokenAccount = TokenAccount & { state?: TokenAccountState };
-export type SolanaTokenAccountRaw = TokenAccountRaw & { state?: TokenAccountState };
+
+export type SolanaTokenProgram = "spl-token" | "spl-token-2022";
+export type SolanaTokenAccount = TokenAccount & {
+  state?: TokenAccountState;
+  tokenProgram?: SolanaTokenProgram;
+};
+export type SolanaTokenAccountRaw = TokenAccountRaw & {
+  state?: TokenAccountState;
+  tokenProgram?: SolanaTokenProgram;
+};
 
 export type TransactionStatus = TransactionStatusCommon;
 

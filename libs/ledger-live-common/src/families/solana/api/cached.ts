@@ -43,6 +43,12 @@ export function cached(api: ChainAPI): ChainAPI {
       minutes(1),
     ),
 
+    getParsedToken2022AccountsByOwner: makeLRUCache(
+      api.getParsedToken2022AccountsByOwner,
+      cacheKeyAddress,
+      minutes(1),
+    ),
+
     getStakeAccountsByStakeAuth: makeLRUCache(
       api.getStakeAccountsByStakeAuth,
       cacheKeyAddress,

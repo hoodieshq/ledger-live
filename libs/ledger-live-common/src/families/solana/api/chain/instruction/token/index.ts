@@ -5,8 +5,9 @@ import { ParsedInfo } from "../../validators";
 import { create, Infer } from "superstruct";
 import { PARSED_PROGRAMS } from "../../program/constants";
 
+type Program = typeof PARSED_PROGRAMS.SPL_TOKEN | typeof PARSED_PROGRAMS.SPL_TOKEN_2022;
 export function parseSplTokenInstruction(
-  ix: ParsedInstruction & { program: typeof PARSED_PROGRAMS.SPL_TOKEN },
+  ix: ParsedInstruction & { program: Program },
 ): TokenInstructionDescriptor {
   const parsed = create(ix.parsed, ParsedInfo);
   const { type: rawType, info } = parsed;

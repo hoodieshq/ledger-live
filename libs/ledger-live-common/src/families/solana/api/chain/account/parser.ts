@@ -3,7 +3,7 @@ import { create } from "superstruct";
 import { PARSED_PROGRAMS } from "../program/constants";
 import { ParsedInfo } from "../validators";
 import { StakeAccountInfo } from "./stake";
-import { TokenAccount, TokenAccountInfo } from "./token";
+import { MintAccountInfo, TokenAccount, TokenAccountInfo } from "./token";
 import { VoteAccount, VoteAccountInfo } from "./vote";
 
 export function parseTokenAccountInfo(info: unknown): TokenAccountInfo {
@@ -16,7 +16,7 @@ export function tryParseAsTokenAccount(
   const routine = () => {
     const info = create(data.parsed, ParsedInfo);
 
-    if (data.program === "spl-token") {
+    if (data.program === "spl-token" || data.program === "spl-token-2022") {
       const parsed = create(info, TokenAccount);
       if (parsed.type === "account") {
         return parseTokenAccountInfo(parsed.info);
@@ -60,4 +60,27 @@ function onThrowReturnError<R>(fn: () => R) {
   } catch (e) {
     return e instanceof Error ? e : new Error(JSON.stringify(e));
   }
+}
+
+export function parseMintAccountInfo(info: unknown): MintAccountInfo {
+  return create(info, MintAccountInfo);
+}
+
+export function tryParseAsMintAccount(
+  data: ParsedAccountData,
+): MintAccountInfo | undefined | Error {
+  const routine = () => {
+    const info = create(data.parsed, ParsedInfo);
+
+    if (data.program === "spl-token" || data.program === "spl-token-2022") {
+      const parsed = create(info, TokenAccount);
+      if (parsed.type === "mint") {
+        return parseMintAccountInfo(parsed.info);
+      }
+    }
+
+    return undefined;
+  };
+
+  return onThrowReturnError(routine);
 }

@@ -12,6 +12,7 @@ import { ChainAPI } from "./api";
 import {
   getMaybeTokenAccount,
   getMaybeVoteAccount,
+  getMaybeTokenMintProgram,
   getStakeAccountAddressWithSeed,
   getStakeAccountMinimumBalanceForRentExemption,
 } from "./api/chain/web3";
@@ -46,6 +47,7 @@ import type {
   SolanaAccount,
   SolanaStake,
   SolanaTokenAccount,
+  SolanaTokenProgram,
   StakeCreateAccountTransaction,
   StakeDelegateTransaction,
   StakeSplitTransaction,
@@ -127,8 +129,9 @@ const deriveTokenTransferCommandDescriptor = async (
   if (!subAccount || subAccount.type !== "TokenAccount") {
     throw new Error("subaccount not found");
   }
+  const tokenAccount: SolanaTokenAccount = subAccount;
 
-  if ((subAccount as SolanaTokenAccount)?.state === "frozen") {
+  if (tokenAccount?.state === "frozen") {
     errors.amount = new SolanaTokenAccountFrozen();
   }
 
@@ -140,12 +143,22 @@ const deriveTokenTransferCommandDescriptor = async (
     validateMemoCommon(memo, errors);
   }
 
-  const tokenIdParts = subAccount.token.id.split("/");
+  const tokenIdParts = tokenAccount.token.id.split("/");
   const mintAddress = tokenIdParts[tokenIdParts.length - 1];
-  const mintDecimals = subAccount.token.units[0].magnitude;
+  const mintDecimals = tokenAccount.token.units[0].magnitude;
+  let tokenProgram = tokenAccount.tokenProgram || "spl-token";
+
+  if (!tokenAccount.tokenProgram) {
+    const mintProgramOrError = await getMaybeTokenMintProgram(mintAddress, api);
+    if (!mintProgramOrError) {
+      throw new Error("Mint not found");
+    }
+    if (mintProgramOrError instanceof Error) throw mintProgramOrError;
+    tokenProgram = mintProgramOrError;
+  }
 
   const senderAssociatedTokenAccountAddress = decodeAccountIdWithTokenAccountAddress(
-    subAccount.id,
+    tokenAccount.id,
   ).address;
 
   if (!errors.recipient && tx.recipient === senderAssociatedTokenAccountAddress) {
@@ -160,7 +173,7 @@ const deriveTokenTransferCommandDescriptor = async (
 
   const recipientDescriptorOrError = errors.recipient
     ? defaultRecipientDescriptor
-    : await getTokenRecipient(tx.recipient, mintAddress, api);
+    : await getTokenRecipient(tx.recipient, mintAddress, tokenProgram, api);
 
   if (!errors.recipient && recipientDescriptorOrError instanceof Error) {
     errors.recipient = recipientDescriptorOrError;
@@ -189,9 +202,11 @@ const deriveTokenTransferCommandDescriptor = async (
     errors.amount = new AmountRequired();
   }
 
-  const txAmount = tx.useAllAmount ? subAccount.spendableBalance.toNumber() : tx.amount.toNumber();
+  const txAmount = tx.useAllAmount
+    ? tokenAccount.spendableBalance.toNumber()
+    : tx.amount.toNumber();
 
-  if (!errors.amount && txAmount > subAccount.spendableBalance.toNumber()) {
+  if (!errors.amount && txAmount > tokenAccount.spendableBalance.toNumber()) {
     errors.amount = new NotEnoughBalance();
   }
 
@@ -205,6 +220,7 @@ const deriveTokenTransferCommandDescriptor = async (
       mintDecimals,
       recipientDescriptor: recipientDescriptor,
       memo: model.uiState.memo,
+      tokenProgram: tokenProgram,
     },
     fee: fee + assocAccRentExempt,
     warnings,
@@ -215,6 +231,7 @@ const deriveTokenTransferCommandDescriptor = async (
 async function getTokenRecipient(
   recipientAddress: string,
   mintAddress: string,
+  tokenProgram: SolanaTokenProgram,
   api: ChainAPI,
 ): Promise<TokenRecipientDescriptor | Error> {
   const recipientTokenAccount = await getMaybeTokenAccount(recipientAddress, api);
@@ -231,6 +248,7 @@ async function getTokenRecipient(
     const recipientAssociatedTokenAccountAddress = await api.findAssocTokenAccAddress(
       recipientAddress,
       mintAddress,
+      tokenProgram,
     );
 
     const shouldCreateAsAssociatedTokenAccount = !(await isAccountFunded(
@@ -284,10 +302,16 @@ async function deriveCreateAssociatedTokenAccountCommandDescriptor(
   const token = getTokenById(model.uiState.tokenId);
   const tokenIdParts = token.id.split("/");
   const mint = tokenIdParts[tokenIdParts.length - 1];
+  const tokenProgram = await getMaybeTokenMintProgram(mint, api);
+
+  if (!tokenProgram || tokenProgram instanceof Error) {
+    throw new Error("Mint not found");
+  }
 
   const associatedTokenAccountAddress = await api.findAssocTokenAccAddress(
     mainAccount.freshAddress,
     mint,
+    tokenProgram,
   );
 
   const { fee } = await estimateFeeAndSpendable(api, mainAccount, tx);
