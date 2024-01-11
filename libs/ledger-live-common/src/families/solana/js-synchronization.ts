@@ -638,9 +638,9 @@ function getTokenSendersRecipients(tx: TransactionDescriptor) {
         new BigNumber(preTokenBalance?.uiTokenAmount.amount ?? 0),
       );
       if (tokenDelta.lt(0)) {
-        accum.senders.push(account.pubkey.toBase58());
+        accum.senders.push(postTokenBalance?.owner || account.pubkey.toBase58());
       } else if (tokenDelta.gt(0)) {
-        accum.recipients.push(account.pubkey.toBase58());
+        accum.recipients.push(postTokenBalance?.owner || account.pubkey.toBase58());
       }
     }
     return accum;
