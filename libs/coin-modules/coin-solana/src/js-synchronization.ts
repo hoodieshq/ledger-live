@@ -653,7 +653,20 @@ function getTokenAccOperationType({
   tx: ParsedTransaction;
   delta: BigNumber;
 }): OperationType {
-  const [mainIx, ...otherIxs] = parseTxInstructions(tx);
+  const parsedIxs = parseTxInstructions(tx);
+  const [mainIx, ...otherIxs] = parsedIxs;
+
+  if (parsedIxs.length === 3) {
+    const [first, second, third] = parsedIxs;
+    if (
+      first.program === "compute-budget" &&
+      second.program === "compute-budget" &&
+      third.program === "spl-token" &&
+      third.instruction.type === "burn"
+    ) {
+      return "BURN";
+    }
+  }
 
   if (mainIx !== undefined && otherIxs.length === 0) {
     switch (mainIx.program) {

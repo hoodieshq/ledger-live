@@ -6,5 +6,6 @@ export const PARSED_PROGRAMS = {
   STAKE: "stake",
   SYSTEM: "system",
   SPL_TOKEN: "spl-token",
+  COMPUTE_BUDGET: "compute-budget",
   VOTE: "vote",
 } as const;
