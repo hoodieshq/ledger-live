@@ -13,16 +13,15 @@ import {
   nullable,
 } from "superstruct";
 import { PublicKeyFromString } from "../validators/pubkey";
+import { MintExtensions, TokenAccountExtensions, AccountState } from "./tokenExtensions";
 
 export type TokenAccountType = Infer<typeof TokenAccountType>;
 export const TokenAccountType = enums(["mint", "account", "multisig"]);
 
-export type TokenAccountState = Infer<typeof AccountState>;
-const AccountState = enums(["initialized", "uninitialized", "frozen"]);
-
 const TokenAmount = type({
   decimals: number(),
   uiAmountString: string(),
+  uiAmount: number(),
   amount: string(),
 });
 
@@ -37,6 +36,7 @@ export const TokenAccountInfo = type({
   rentExemptReserve: optional(TokenAmount),
   delegatedAmount: optional(TokenAmount),
   closeAuthority: optional(PublicKeyFromString),
+  extensions: optional(TokenAccountExtensions),
 });
 
 export type MintAccountInfo = Infer<typeof MintAccountInfo>;
@@ -46,6 +46,7 @@ export const MintAccountInfo = type({
   decimals: number(),
   isInitialized: boolean(),
   freezeAuthority: nullable(PublicKeyFromString),
+  extensions: optional(MintExtensions),
 });
 
 export type MultisigAccountInfo = Infer<typeof MultisigAccountInfo>;

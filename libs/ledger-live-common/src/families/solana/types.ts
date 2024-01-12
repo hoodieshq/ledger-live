@@ -11,7 +11,7 @@ import {
   TransactionStatusCommonRaw,
 } from "@ledgerhq/types-live";
 import { ValidatorsAppValidator } from "./validator-app";
-import { TokenAccountState } from "./api/chain/account/token";
+import { TokenAccountState } from "./api/chain/account/tokenExtensions";
 
 export type TransferCommand = {
   kind: "transfer";
