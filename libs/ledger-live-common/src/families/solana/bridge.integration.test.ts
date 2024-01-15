@@ -1162,6 +1162,7 @@ describe("solana tokens", () => {
     creationDate: new Date(),
     operationsCount: 0,
     starred: false,
+    tokenProgram: "spl-token",
     balanceHistoryCache: {
       HOUR: { balances: [], latestDate: null },
       DAY: { balances: [], latestDate: null },
@@ -1169,6 +1170,51 @@ describe("solana tokens", () => {
     },
     swapHistory: [],
   };
+
+  const baseAta2022Mock = {
+    parsed: {
+      info: {
+        isNative: false,
+        mint: wSolToken.contractAddress,
+        owner: testOnChainData.fundedSenderAddress,
+        state: "initialized",
+        tokenAmount: {
+          amount: "10000000",
+          decimals: wSolToken.units[0].magnitude,
+          uiAmount: 10.0,
+          uiAmountString: "10",
+        },
+      },
+      type: "account",
+    },
+    program: "spl-token-2022",
+    space: 165,
+  };
+  const baseToken2022MintMock = {
+    data: {
+      parsed: {
+        info: {
+          decimals: 9,
+          freezeAuthority: null,
+          isInitialized: true,
+          mintAuthority: null,
+          supply: 0,
+        },
+        type: "mint",
+      },
+      program: "spl-token-2022",
+      space: 82,
+    },
+    executable: false,
+    lamports: 419787401967,
+    owner: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    rentEpoch: 304,
+  };
+  const mockedToken2022Acc: SolanaTokenAccount = {
+    ...mockedTokenAcc,
+    tokenProgram: "spl-token-2022",
+  };
+
   test("token.transfer :: status is error: sender ATA is frozen", async () => {
     const txModel: TokenTransferTransaction = {
       kind: "token.transfer",
@@ -1256,6 +1302,95 @@ describe("solana tokens", () => {
       errors: {
         recipient: new SolanaTokenAccountFrozen(),
       },
+      warnings: {},
+    };
+
+    expect(receivedTxStatus).toEqual(expectedTxStatus);
+  });
+
+  test("token2022.transfer :: status is success", async () => {
+    const txModel: TokenTransferTransaction = {
+      kind: "token.transfer",
+      uiState: {
+        subAccountId: wSolSubAccId,
+      },
+    };
+
+    const api = {
+      ...baseAPI,
+      getAccountInfo: () => Promise.resolve({ data: baseAta2022Mock } as any),
+      getBalance: () => Promise.resolve(10),
+    } as ChainAPI;
+
+    const account: SolanaAccount = {
+      ...baseAccount,
+      freshAddress: testOnChainData.fundedSenderAddress,
+      subAccounts: [mockedToken2022Acc],
+      solanaResources: { stakes: [], unstakeReserve: BigNumber(0) },
+    };
+
+    const tx: Transaction = {
+      model: txModel,
+      amount: new BigNumber(10),
+      recipient: testOnChainData.fundedAddress,
+      family: "solana",
+    };
+
+    const preparedTx = await prepareTransaction(account, tx, api);
+    const receivedTxStatus = await getTransactionStatus(account, preparedTx);
+    const expectedTxStatus: TransactionStatus = {
+      amount: new BigNumber(10),
+      estimatedFees: new BigNumber(testOnChainData.fees.lamportsPerSignature),
+      totalSpent: new BigNumber(10),
+      errors: {},
+      warnings: {},
+    };
+
+    expect(receivedTxStatus).toEqual(expectedTxStatus);
+  });
+  test("token2022.transfer :: token with undefined tokenProgram :: status is success", async () => {
+    const txModel: TokenTransferTransaction = {
+      kind: "token.transfer",
+      uiState: {
+        subAccountId: wSolSubAccId,
+      },
+    };
+    const api = {
+      ...baseAPI,
+      getAccountInfo: (address: string) => {
+        if (address === wSolToken.contractAddress) {
+          return Promise.resolve(baseToken2022MintMock as any);
+        }
+        return Promise.resolve({ data: baseAta2022Mock } as any);
+      },
+      getBalance: () => Promise.resolve(10),
+    } as ChainAPI;
+
+    const token2022Acc: SolanaTokenAccount = {
+      ...mockedToken2022Acc,
+      tokenProgram: undefined,
+    };
+    const account: SolanaAccount = {
+      ...baseAccount,
+      freshAddress: testOnChainData.fundedSenderAddress,
+      subAccounts: [token2022Acc],
+      solanaResources: { stakes: [], unstakeReserve: BigNumber(0) },
+    };
+
+    const tx: Transaction = {
+      model: txModel,
+      amount: new BigNumber(10),
+      recipient: testOnChainData.fundedAddress,
+      family: "solana",
+    };
+
+    const preparedTx = await prepareTransaction(account, tx, api);
+    const receivedTxStatus = await getTransactionStatus(account, preparedTx);
+    const expectedTxStatus: TransactionStatus = {
+      amount: new BigNumber(10),
+      estimatedFees: new BigNumber(testOnChainData.fees.lamportsPerSignature),
+      totalSpent: new BigNumber(10),
+      errors: {},
       warnings: {},
     };
 

@@ -151,7 +151,7 @@ const deriveTokenTransferCommandDescriptor = async (
   if (!tokenAccount.tokenProgram) {
     const mintProgramOrError = await getMaybeTokenMintProgram(mintAddress, api);
     if (!mintProgramOrError) {
-      throw new Error("Mint not found");
+      throw new Error(`Mint ${mintAddress} not found`);
     }
     if (mintProgramOrError instanceof Error) throw mintProgramOrError;
     tokenProgram = mintProgramOrError;
