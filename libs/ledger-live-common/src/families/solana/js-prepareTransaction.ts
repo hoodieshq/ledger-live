@@ -238,6 +238,17 @@ async function getTokenRecipient(
       api,
     ));
 
+    if (!shouldCreateAsAssociatedTokenAccount) {
+      const associatedTokenAccount = await getMaybeTokenAccount(
+        recipientAssociatedTokenAccountAddress,
+        api,
+      );
+      if (associatedTokenAccount instanceof Error) throw recipientTokenAccount;
+      if (associatedTokenAccount?.state === "frozen") {
+        return new SolanaTokenAccountFrozen();
+      }
+    }
+
     return {
       walletAddress: recipientAddress,
       shouldCreateAsAssociatedTokenAccount,
