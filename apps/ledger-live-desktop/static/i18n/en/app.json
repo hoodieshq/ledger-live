@@ -5921,7 +5921,7 @@
       "title": "Account will be funded"
     },
     "SolanaTokenAccountFrozen": {
-      "title": "Account assets are frozen"
+      "title": "Token account assets are frozen"
     },
     "SolanaTokenAccounNotInitialized": {
       "title": "Account not initialized"
