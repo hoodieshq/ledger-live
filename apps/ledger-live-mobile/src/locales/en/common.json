@@ -775,6 +775,9 @@
     "SolanaTxConfirmationTimeout": {
       "title": "Your transaction may have failed. Please wait a moment then check the transaction history before trying again."
     },
+    "SolanaRecipientMemoIsRequired": {
+      "title": "Memo is required for recipient address"
+    },
     "CardanoMinAmountError": {
       "title": "Minimum sendable amount is {{amount}} ADA"
     },

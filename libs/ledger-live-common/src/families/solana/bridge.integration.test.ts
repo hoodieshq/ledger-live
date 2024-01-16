@@ -28,6 +28,7 @@ import {
   SolanaInvalidValidator,
   SolanaMemoIsTooLong,
   SolanaRecipientAssociatedTokenAccountWillBeFunded,
+  SolanaRecipientMemoIsRequired,
   SolanaStakeAccountNotFound,
   SolanaStakeAccountRequired,
   SolanaTokenAccountFrozen,
@@ -1348,6 +1349,7 @@ describe("solana tokens", () => {
 
     expect(receivedTxStatus).toEqual(expectedTxStatus);
   });
+
   test("token2022.transfer :: token with undefined tokenProgram :: status is success", async () => {
     const txModel: TokenTransferTransaction = {
       kind: "token.transfer",
@@ -1395,5 +1397,62 @@ describe("solana tokens", () => {
     };
 
     expect(receivedTxStatus).toEqual(expectedTxStatus);
+  });
+
+  test("token2022.transfer :: ATA with required memo :: status is error", async () => {
+    const txModel: TokenTransferTransaction = {
+      kind: "token.transfer",
+      uiState: {
+        subAccountId: wSolSubAccId,
+      },
+    };
+    const ataWithRequiredMemoMock = {
+      ...baseAta2022Mock,
+      parsed: {
+        ...baseAta2022Mock.parsed,
+        info: {
+          ...baseAta2022Mock.parsed.info,
+          extensions: [
+            {
+              extension: "memoTransfer",
+              state: { requireIncomingTransferMemos: true },
+            },
+          ],
+        },
+      },
+    };
+    const api = {
+      ...baseAPI,
+      getAccountInfo: (address: string) => {
+        if (address === wSolToken.contractAddress) {
+          return Promise.resolve(baseToken2022MintMock as any);
+        }
+        return Promise.resolve({ data: ataWithRequiredMemoMock } as any);
+      },
+      getBalance: () => Promise.resolve(10),
+    } as ChainAPI;
+
+    const account: SolanaAccount = {
+      ...baseAccount,
+      freshAddress: testOnChainData.fundedSenderAddress,
+      subAccounts: [mockedToken2022Acc],
+      solanaResources: { stakes: [], unstakeReserve: BigNumber(0) },
+    };
+
+    const tx: Transaction = {
+      model: txModel,
+      amount: new BigNumber(10),
+      recipient: testOnChainData.fundedAddress,
+      family: "solana",
+    };
+
+    const preparedTx = await prepareTransaction(account, tx, api);
+    const receivedTxStatus = await getTransactionStatus(account, preparedTx);
+    const expectedErrors = {
+      memo: new SolanaRecipientMemoIsRequired(),
+      transaction: new SolanaRecipientMemoIsRequired(),
+    };
+
+    expect(receivedTxStatus.errors).toEqual(expectedErrors);
   });
 });

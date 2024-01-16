@@ -5183,7 +5183,8 @@
     },
     "solana": {
       "memo": "Memo",
-      "memoPlaceholder": "Optional"
+      "memoPlaceholder": "Optional",
+      "requiredMemoPlaceholder": "Required"
     }
   },
   "errors": {
@@ -5939,6 +5940,9 @@
     },
     "SolanaTxConfirmationTimeout": {
       "title": "Your transaction may have failed. Please wait a moment then check the transaction history before trying again."
+    },
+    "SolanaRecipientMemoIsRequired": {
+      "title": "Memo is required for recipient address"
     },
     "NotEnoughNftOwned": {
       "title": "You have exceeded the number of available tokens"
