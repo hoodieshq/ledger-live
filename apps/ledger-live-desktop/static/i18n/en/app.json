@@ -3677,7 +3677,13 @@
       }
     },
     "token": {
-      "frozenStateWarning": "Account assets are frozen!"
+      "frozenStateWarning": "Account assets are frozen!",
+      "transferFees": {
+        "feesPercentHint": "Token has {{feePercent}}% transfer fee.",
+        "maxFeetHint": "Max transfer fee {{maxFee}} {{unit}}.",
+        "amountExcludingFeesHint": "Recipient will receive {{amountExcludingFees}} {{unit}}.",
+        "includeFeesSwitch": "Include fees"
+      }
     }
   },
   "ethereum": {

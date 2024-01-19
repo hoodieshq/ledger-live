@@ -13,8 +13,11 @@ import {
   size,
   string,
   optional,
+  unknown,
 } from "superstruct";
 import { PublicKeyFromString } from "../validators/pubkey";
+
+// Token2022 extensions guide: https://spl.solana.com/token-2022/extensions
 
 export type TokenAccountState = Infer<typeof AccountState>;
 export const AccountState = enums(["initialized", "uninitialized", "frozen"]);
@@ -82,6 +85,10 @@ export const ConfidentialTransferAccountExt = type({
     actualPendingBalanceCreditCounter: number(),
   }),
 });
+export const UnknownExt = type({
+  extension: string(),
+  state: optional(unknown()),
+});
 
 export type TokenAccountExtensions = Infer<typeof TokenAccountExtensions>;
 export const TokenAccountExtensions = array(
@@ -91,6 +98,7 @@ export const TokenAccountExtensions = array(
     TransferFeeAmountExt,
     СpiGuardExt,
     NonTransferableAccountExt,
+    UnknownExt,
   ]),
 );
 
@@ -221,5 +229,6 @@ export const MintExtensions = array(
     MetadataPointerExt,
     TokenMetadataExt,
     ConfidentialTransferMintExt,
+    UnknownExt,
   ]),
 );

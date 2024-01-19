@@ -15,6 +15,7 @@ import {
   getMaybeTokenMintProgram,
   getStakeAccountAddressWithSeed,
   getStakeAccountMinimumBalanceForRentExemption,
+  getMaybeTokenMint,
 } from "./api/chain/web3";
 import {
   SolanaAccountNotFunded,
@@ -66,7 +67,7 @@ import { assertUnreachable } from "./utils";
 import { defaultUpdateTransaction } from "@ledgerhq/coin-framework/bridge/jsHelpers";
 import { estimateFeeAndSpendable } from "./js-estimateMaxSpendable";
 import { TokenAccountInfo } from "./api/chain/account/token";
-import { TokenAccountState } from "./api/chain/account/tokenExtensions";
+import { MemoTransferExt } from "./api/chain/account/tokenExtensions";
 
 async function deriveCommandDescriptor(
   mainAccount: SolanaAccount,
@@ -151,14 +152,13 @@ const deriveTokenTransferCommandDescriptor = async (
   const mintAddress = tokenIdParts[tokenIdParts.length - 1];
   const mintDecimals = tokenAccount.token.units[0].magnitude;
   let tokenProgram = tokenAccount.tokenProgram || "spl-token";
+  const mintOrError = await getMaybeTokenMint(mintAddress, api);
+
+  if (!mintOrError) throw new Error(`Mint ${mintAddress} not found`);
+  if (mintOrError instanceof Error) throw mintOrError;
 
   if (!tokenAccount.tokenProgram) {
-    const mintProgramOrError = await getMaybeTokenMintProgram(mintAddress, api);
-    if (!mintProgramOrError) {
-      throw new Error(`Mint ${mintAddress} not found`);
-    }
-    if (mintProgramOrError instanceof Error) throw mintProgramOrError;
-    tokenProgram = mintProgramOrError;
+    tokenProgram = mintOrError.onChainAcc.data.program as SolanaTokenProgram;
   }
 
   const senderAssociatedTokenAccountAddress = decodeAccountIdWithTokenAccountAddress(
@@ -229,6 +229,7 @@ const deriveTokenTransferCommandDescriptor = async (
       recipientDescriptor: recipientDescriptor,
       memo: model.uiState.memo,
       tokenProgram: tokenProgram,
+      tokenExtensions: mintOrError.info.extensions,
     },
     fee: fee + assocAccRentExempt,
     warnings,
@@ -741,13 +742,14 @@ function validateAndTryGetStakeAccount(
   return undefined;
 }
 
-function validateAssociatedTokenAccountState(associatedTokenAccount: {
-  state?: TokenAccountState;
-}): undefined | Error {
-  if (associatedTokenAccount.state === "frozen") {
+function validateAssociatedTokenAccountState(
+  tokenAcc: SolanaTokenAccount | TokenAccountInfo,
+): undefined | Error {
+  if (tokenAcc.state === "frozen") {
     return new SolanaTokenAccountFrozen();
   }
-  if (associatedTokenAccount.state !== "initialized") {
+  // do not check initialized state on ledger accounts
+  if (!(tokenAcc as SolanaTokenAccount).id && tokenAcc.state !== "initialized") {
     return new SolanaTokenAccounNotInitialized();
   }
 }
@@ -760,7 +762,9 @@ function validateRecipientRequiredMemo(
   if (!recipientAccInfo.extensions) return;
 
   const isRecipientMemoRequired = recipientAccInfo.extensions?.find(
-    ext => ext.extension === "memoTransfer" && ext.state.requireIncomingTransferMemos,
+    ext =>
+      ext.extension === "memoTransfer" &&
+      (ext as MemoTransferExt).state.requireIncomingTransferMemos,
   );
   if (isRecipientMemoRequired && !memo) {
     errors.memo = new SolanaRecipientMemoIsRequired();

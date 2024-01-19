@@ -1,3 +1,4 @@
+import BigNumber from "bignumber.js";
 import { findTokenById } from "@ledgerhq/cryptoassets";
 import { PublicKey } from "@solana/web3.js";
 import { AccountLike, TokenAccount } from "@ledgerhq/types-live";
@@ -5,6 +6,7 @@ import { StakeMeta } from "./api/chain/account/stake";
 import { SolanaStake, SolanaTokenAccount, SolanaTokenProgram, StakeAction } from "./types";
 import { assertUnreachable } from "./utils";
 import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { TransferFeeConfigExt } from "./api/chain/account/tokenExtensions";
 
 export type Awaited<T> = T extends PromiseLike<infer U> ? U : T;
 
@@ -129,4 +131,47 @@ export function isTokenAccountFrozen(account: AccountLike) {
 
 export function getTokenAccountProgramId(program: SolanaTokenProgram): typeof TOKEN_PROGRAM_ID {
   return program === "spl-token-2022" ? TOKEN_2022_PROGRAM_ID : TOKEN_PROGRAM_ID;
+}
+
+// https://spl.solana.com/token-2022/extensions#transfer-fees
+export function calculateToken2022TransferFees({
+  transferAmount,
+  transferFeeConfigState,
+  currentEpoch,
+}: {
+  transferAmount: number;
+  transferFeeConfigState: Pick<
+    TransferFeeConfigExt["state"],
+    "newerTransferFee" | "olderTransferFee"
+  >;
+  currentEpoch: number;
+}): {
+  maxTransferFee: number;
+  transferFee: number;
+  feePercent: number;
+  transferAmountIncludingFee: number;
+  transferAmountExcludingFee: number;
+} {
+  const { newerTransferFee, olderTransferFee } = transferFeeConfigState;
+  const transferFeeConfig =
+    currentEpoch >= newerTransferFee.epoch ? newerTransferFee : olderTransferFee;
+
+  const { maximumFee, transferFeeBasisPoints } = transferFeeConfig;
+  const feePercent = BigNumber(transferFeeBasisPoints).div(10_000);
+  const estimatedTransferFee = feePercent.multipliedBy(transferAmount).toNumber();
+  const transferFee = estimatedTransferFee > maximumFee ? maximumFee : estimatedTransferFee;
+
+  return {
+    feePercent: feePercent.toNumber(),
+    maxTransferFee: maximumFee,
+    transferFee,
+    transferAmountIncludingFee: BigNumber(transferAmount)
+      .div(BigNumber(1).minus(feePercent))
+      .decimalPlaces(0, BigNumber.ROUND_UP)
+      .toNumber(),
+    transferAmountExcludingFee: BigNumber(transferAmount)
+      .minus(transferFee)
+      .decimalPlaces(0, BigNumber.ROUND_DOWN)
+      .toNumber(),
+  };
 }

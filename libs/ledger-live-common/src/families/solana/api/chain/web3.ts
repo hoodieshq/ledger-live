@@ -4,8 +4,10 @@ import {
   getAssociatedTokenAddress,
 } from "@solana/spl-token";
 import {
+  AccountInfo,
   ConfirmedSignatureInfo,
   Connection,
+  ParsedAccountData,
   ParsedTransactionWithMeta,
   PublicKey,
   StakeProgram,
@@ -46,6 +48,11 @@ type ParsedOnChainStakeAccount = Awaited<
 export type ParsedOnChainTokenAccountWithInfo = {
   onChainAcc: ParsedOnChainTokenAccount;
   info: TokenAccountInfo;
+};
+
+export type ParsedOnChainMintWithInfo = {
+  onChainAcc: AccountInfo<ParsedAccountData>;
+  info: MintAccountInfo;
 };
 
 export type ParsedOnChainStakeAccountWithInfo = {
@@ -262,13 +269,19 @@ export async function getMaybeVoteAccount(
 export const getMaybeTokenMint = async (
   address: string,
   api: ChainAPI,
-): Promise<MintAccountInfo | undefined | Error> => {
+): Promise<ParsedOnChainMintWithInfo | undefined | Error> => {
   const accInfo = await api.getAccountInfo(address);
 
-  const mint =
-    accInfo !== null && "parsed" in accInfo.data ? tryParseAsMintAccount(accInfo.data) : undefined;
+  if (!accInfo || !("parsed" in accInfo.data)) return undefined;
 
-  return mint;
+  const mintOrError = tryParseAsMintAccount(accInfo.data);
+
+  if (!mintOrError || mintOrError instanceof Error) return mintOrError;
+
+  return {
+    info: mintOrError,
+    onChainAcc: accInfo as ParsedOnChainMintWithInfo["onChainAcc"],
+  };
 };
 
 export const getMaybeTokenMintProgram = async (

@@ -11,7 +11,7 @@ import {
   TransactionStatusCommonRaw,
 } from "@ledgerhq/types-live";
 import { ValidatorsAppValidator } from "./validator-app";
-import { TokenAccountState } from "./api/chain/account/tokenExtensions";
+import { MintExtensions, TokenAccountState } from "./api/chain/account/tokenExtensions";
 
 export type TransferCommand = {
   kind: "transfer";
@@ -85,6 +85,7 @@ export type TokenTransferCommand = {
   mintAddress: string;
   mintDecimals: number;
   tokenProgram: SolanaTokenProgram;
+  tokenExtensions?: MintExtensions;
   memo?: string;
 };
 
@@ -117,6 +118,7 @@ export type TokenTransferTransaction = {
   uiState: {
     subAccountId: string;
     memo?: string;
+    includeTransferFees?: boolean;
   };
 };
 
