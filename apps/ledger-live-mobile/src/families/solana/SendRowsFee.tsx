@@ -1,6 +1,10 @@
 import { getAccountCurrency, getAccountUnit } from "@ledgerhq/live-common/account/index";
 import { Transaction, TransactionStatus } from "@ledgerhq/live-common/generated/types";
-import { TransactionStatus as SolanaTransactionStatus } from "@ledgerhq/live-common/families/solana/types";
+import {
+  TransactionStatus as SolanaTransactionStatus,
+  Transaction as SolanaTransaction,
+  SolanaAccount,
+} from "@ledgerhq/live-common/families/solana/types";
 import { Account, AccountLike } from "@ledgerhq/types-live";
 import { Text } from "@ledgerhq/native-ui";
 import { CompositeScreenProps, useTheme } from "@react-navigation/native";
@@ -18,11 +22,13 @@ import type { SendFundsNavigatorStackParamList } from "~/components/RootNavigato
 import { ScreenName } from "~/const";
 import { SignTransactionNavigatorParamList } from "~/components/RootNavigator/types/SignTransactionNavigator";
 import { SwapNavigatorParamList } from "~/components/RootNavigator/types/SwapNavigator";
+import TokenTransferFeesWarning from "./Token2022/TokenTransferFeesWarning";
 
 type Props = {
   account: AccountLike;
   parentAccount?: Account | null;
   transaction: Transaction;
+  setTransaction: (..._: Array<Transaction>) => void;
   status?: TransactionStatus;
 } & CompositeScreenProps<
   | StackNavigatorProps<SendFundsNavigatorStackParamList, ScreenName.SendSummary>
@@ -31,38 +37,54 @@ type Props = {
   StackNavigatorProps<BaseNavigatorStackParamList>
 >;
 
-export default function SolanaFeeRow({ account, parentAccount, status }: Props) {
+export default function SolanaFeeRow({
+  account,
+  parentAccount,
+  status,
+  transaction,
+  setTransaction,
+}: Props) {
   const { colors } = useTheme();
   const extraInfoFees = useCallback(() => {
     Linking.openURL(urls.solana.supportPage);
   }, []);
 
   const fees = (status as SolanaTransactionStatus).estimatedFees;
-
-  const unit = getAccountUnit(account.type === "TokenAccount" ? parentAccount || account : account);
+  const isTokenAccount = account.type === "TokenAccount";
+  const unit = getAccountUnit(isTokenAccount ? parentAccount || account : account);
   const currency = getAccountCurrency(account);
 
   return (
-    <SummaryRow
-      onPress={extraInfoFees}
-      title={<Trans i18nKey="send.fees.title" />}
-      additionalInfo={
-        <View>
-          <ExternalLink size={12} color={colors.grey} />
-        </View>
-      }
-    >
-      <View style={{ alignItems: "flex-end" }}>
-        <View style={styles.accountContainer}>
-          <Text style={styles.valueText}>
-            <CurrencyUnitValue unit={unit} value={fees} />
+    <>
+      <SummaryRow
+        onPress={extraInfoFees}
+        title={<Trans i18nKey="send.fees.title" />}
+        additionalInfo={
+          <View>
+            <ExternalLink size={12} color={colors.grey} />
+          </View>
+        }
+      >
+        <View style={{ alignItems: "flex-end" }}>
+          <View style={styles.accountContainer}>
+            <Text style={styles.valueText}>
+              <CurrencyUnitValue unit={unit} value={fees} />
+            </Text>
+          </View>
+          <Text style={styles.countervalue} color="grey">
+            <CounterValue before="≈ " value={fees} currency={currency} />
           </Text>
         </View>
-        <Text style={styles.countervalue} color="grey">
-          <CounterValue before="≈ " value={fees} currency={currency} />
-        </Text>
-      </View>
-    </SummaryRow>
+      </SummaryRow>
+      {isTokenAccount && (
+        <TokenTransferFeesWarning
+          account={parentAccount as SolanaAccount}
+          tokenAccount={account}
+          transaction={transaction as SolanaTransaction}
+          setTransaction={setTransaction}
+        />
+      )}
+    </>
   );
 }
 

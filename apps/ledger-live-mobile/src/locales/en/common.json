@@ -5775,7 +5775,14 @@
       "reserveWarning": "Please ensure you reserve at least {{amount}} SOL in your wallet to cover future network fees to deactivate and withdraw your stake"
     },
     "token": {
-      "frozenStateWarning": "Account assets are frozen!"
+      "frozenStateWarning": "Account assets are frozen!",
+      "transferFees": {
+        "title": "Transfer fees",
+        "feesPercentHint": "Token has {{feePercent}}% transfer fee.",
+        "maxFeetHint": "Max transfer fee {{maxFee}} {{unit}}.",
+        "amountExcludingFeesHint": "Recipient will receive {{amountExcludingFees}} {{unit}}.",
+        "includeFeesSwitch": "Include fees"
+      }
     }
   },
   "near": {

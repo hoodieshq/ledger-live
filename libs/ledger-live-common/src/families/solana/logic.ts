@@ -157,8 +157,8 @@ export function calculateToken2022TransferFees({
     currentEpoch >= newerTransferFee.epoch ? newerTransferFee : olderTransferFee;
 
   const { maximumFee, transferFeeBasisPoints } = transferFeeConfig;
-  const feePercent = BigNumber(transferFeeBasisPoints).div(10_000);
-  const estimatedTransferFee = feePercent.multipliedBy(transferAmount).toNumber();
+  const feePercent = BigNumber(transferFeeBasisPoints).div(100);
+  const estimatedTransferFee = feePercent.div(100).multipliedBy(transferAmount).toNumber();
   const transferFee = estimatedTransferFee > maximumFee ? maximumFee : estimatedTransferFee;
 
   return {
@@ -166,7 +166,7 @@ export function calculateToken2022TransferFees({
     maxTransferFee: maximumFee,
     transferFee,
     transferAmountIncludingFee: BigNumber(transferAmount)
-      .div(BigNumber(1).minus(feePercent))
+      .div(BigNumber(1).minus(feePercent.div(100)))
       .decimalPlaces(0, BigNumber.ROUND_UP)
       .toNumber(),
     transferAmountExcludingFee: BigNumber(transferAmount)
