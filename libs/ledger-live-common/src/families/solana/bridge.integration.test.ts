@@ -6,6 +6,7 @@ import {
   SolanaStake,
   SolanaTokenAccount,
   SolanaTokenAccountRaw,
+  TokenTransferCommand,
   TokenTransferTransaction,
   Transaction,
   TransactionModel,
@@ -35,7 +36,11 @@ import {
   SolanaTokenAccountHoldsAnotherToken,
   SolanaValidatorRequired,
 } from "./errors";
-import { encodeAccountIdWithTokenAccountAddress, MAX_MEMO_LENGTH } from "./logic";
+import {
+  calculateToken2022TransferFees,
+  encodeAccountIdWithTokenAccountAddress,
+  MAX_MEMO_LENGTH,
+} from "./logic";
 import createTransaction from "./js-createTransaction";
 import { compact } from "lodash/fp";
 import { SYSTEM_ACCOUNT_RENT_EXEMPT, assertUnreachable } from "./utils";
@@ -1120,6 +1125,24 @@ const mockedVoteAccount = {
 };
 
 describe("solana tokens", () => {
+  const baseSolanaAccount: SolanaAccount = {
+    ...baseAccount,
+    freshAddress: testOnChainData.fundedSenderAddress,
+    solanaResources: { stakes: [], unstakeReserve: BigNumber(0) },
+  };
+  const baseTxModel: TokenTransferTransaction = {
+    kind: "token.transfer",
+    uiState: {
+      subAccountId: wSolSubAccId,
+    },
+  };
+  const baseTx: Transaction = {
+    model: baseTxModel,
+    amount: new BigNumber(10),
+    recipient: testOnChainData.fundedAddress,
+    family: "solana",
+  };
+
   const baseAtaMock = {
     parsed: {
       info: {
@@ -1191,7 +1214,7 @@ describe("solana tokens", () => {
     program: "spl-token-2022",
     space: 165,
   };
-  const baseToken2022MintMock = {
+  const baseTokenMintMock = {
     data: {
       parsed: {
         info: {
@@ -1199,11 +1222,11 @@ describe("solana tokens", () => {
           freezeAuthority: null,
           isInitialized: true,
           mintAuthority: null,
-          supply: 0,
+          supply: "0",
         },
         type: "mint",
       },
-      program: "spl-token-2022",
+      program: "spl-token",
       space: 82,
     },
     executable: false,
@@ -1211,22 +1234,27 @@ describe("solana tokens", () => {
     owner: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
     rentEpoch: 304,
   };
+  const baseToken2022MintMock = {
+    ...baseTokenMintMock,
+    data: {
+      ...baseTokenMintMock.data,
+      program: "spl-token-2022",
+    },
+  };
   const mockedToken2022Acc: SolanaTokenAccount = {
     ...mockedTokenAcc,
     tokenProgram: "spl-token-2022",
   };
 
   test("token.transfer :: status is error: sender ATA is frozen", async () => {
-    const txModel: TokenTransferTransaction = {
-      kind: "token.transfer",
-      uiState: {
-        subAccountId: wSolSubAccId,
-      },
-    };
-
     const api = {
       ...baseAPI,
-      getAccountInfo: () => Promise.resolve({ data: baseAtaMock } as any),
+      getAccountInfo: (address: string) => {
+        if (address === wSolToken.contractAddress) {
+          return Promise.resolve(baseTokenMintMock as any);
+        }
+        return Promise.resolve({ data: baseAtaMock } as any);
+      },
       getBalance: () => Promise.resolve(10),
     } as ChainAPI;
 
@@ -1235,20 +1263,11 @@ describe("solana tokens", () => {
       state: "frozen",
     };
     const account: SolanaAccount = {
-      ...baseAccount,
-      freshAddress: testOnChainData.fundedSenderAddress,
+      ...baseSolanaAccount,
       subAccounts: [tokenAcc],
-      solanaResources: { stakes: [], unstakeReserve: BigNumber(0) },
     };
 
-    const tx: Transaction = {
-      model: txModel,
-      amount: new BigNumber(10),
-      recipient: testOnChainData.fundedAddress,
-      family: "solana",
-    };
-
-    const preparedTx = await prepareTransaction(account, tx, api);
+    const preparedTx = await prepareTransaction(account, baseTx, api);
     const receivedTxStatus = await getTransactionStatus(account, preparedTx);
     const expectedTxStatus: TransactionStatus = {
       amount: new BigNumber(10),
@@ -1264,16 +1283,14 @@ describe("solana tokens", () => {
   });
 
   test("token.transfer :: status is error: recipient ATA is frozen", async () => {
-    const txModel: TokenTransferTransaction = {
-      kind: "token.transfer",
-      uiState: {
-        subAccountId: wSolSubAccId,
-      },
-    };
-
     const api = {
       ...baseAPI,
-      getAccountInfo: () => Promise.resolve({ data: frozenAtaMock } as any),
+      getAccountInfo: (address: string) => {
+        if (address === wSolToken.contractAddress) {
+          return Promise.resolve(baseTokenMintMock as any);
+        }
+        return Promise.resolve({ data: frozenAtaMock } as any);
+      },
       getBalance: () => Promise.resolve(10),
     } as ChainAPI;
 
@@ -1281,20 +1298,11 @@ describe("solana tokens", () => {
       ...mockedTokenAcc,
     };
     const account: SolanaAccount = {
-      ...baseAccount,
-      freshAddress: testOnChainData.fundedSenderAddress,
+      ...baseSolanaAccount,
       subAccounts: [tokenAcc],
-      solanaResources: { stakes: [], unstakeReserve: BigNumber(0) },
     };
 
-    const tx: Transaction = {
-      model: txModel,
-      amount: new BigNumber(10),
-      recipient: testOnChainData.fundedAddress,
-      family: "solana",
-    };
-
-    const preparedTx = await prepareTransaction(account, tx, api);
+    const preparedTx = await prepareTransaction(account, baseTx, api);
     const receivedTxStatus = await getTransactionStatus(account, preparedTx);
     const expectedTxStatus: TransactionStatus = {
       amount: new BigNumber(10),
@@ -1310,34 +1318,23 @@ describe("solana tokens", () => {
   });
 
   test("token2022.transfer :: status is success", async () => {
-    const txModel: TokenTransferTransaction = {
-      kind: "token.transfer",
-      uiState: {
-        subAccountId: wSolSubAccId,
-      },
-    };
-
     const api = {
       ...baseAPI,
-      getAccountInfo: () => Promise.resolve({ data: baseAta2022Mock } as any),
+      getAccountInfo: (address: string) => {
+        if (address === wSolToken.contractAddress) {
+          return Promise.resolve(baseToken2022MintMock as any);
+        }
+        return Promise.resolve({ data: baseAta2022Mock } as any);
+      },
       getBalance: () => Promise.resolve(10),
     } as ChainAPI;
 
     const account: SolanaAccount = {
-      ...baseAccount,
-      freshAddress: testOnChainData.fundedSenderAddress,
+      ...baseSolanaAccount,
       subAccounts: [mockedToken2022Acc],
-      solanaResources: { stakes: [], unstakeReserve: BigNumber(0) },
     };
 
-    const tx: Transaction = {
-      model: txModel,
-      amount: new BigNumber(10),
-      recipient: testOnChainData.fundedAddress,
-      family: "solana",
-    };
-
-    const preparedTx = await prepareTransaction(account, tx, api);
+    const preparedTx = await prepareTransaction(account, baseTx, api);
     const receivedTxStatus = await getTransactionStatus(account, preparedTx);
     const expectedTxStatus: TransactionStatus = {
       amount: new BigNumber(10),
@@ -1351,12 +1348,6 @@ describe("solana tokens", () => {
   });
 
   test("token2022.transfer :: token with undefined tokenProgram :: status is success", async () => {
-    const txModel: TokenTransferTransaction = {
-      kind: "token.transfer",
-      uiState: {
-        subAccountId: wSolSubAccId,
-      },
-    };
     const api = {
       ...baseAPI,
       getAccountInfo: (address: string) => {
@@ -1373,20 +1364,11 @@ describe("solana tokens", () => {
       tokenProgram: undefined,
     };
     const account: SolanaAccount = {
-      ...baseAccount,
-      freshAddress: testOnChainData.fundedSenderAddress,
+      ...baseSolanaAccount,
       subAccounts: [token2022Acc],
-      solanaResources: { stakes: [], unstakeReserve: BigNumber(0) },
     };
 
-    const tx: Transaction = {
-      model: txModel,
-      amount: new BigNumber(10),
-      recipient: testOnChainData.fundedAddress,
-      family: "solana",
-    };
-
-    const preparedTx = await prepareTransaction(account, tx, api);
+    const preparedTx = await prepareTransaction(account, baseTx, api);
     const receivedTxStatus = await getTransactionStatus(account, preparedTx);
     const expectedTxStatus: TransactionStatus = {
       amount: new BigNumber(10),
@@ -1400,12 +1382,6 @@ describe("solana tokens", () => {
   });
 
   test("token2022.transfer :: ATA with required memo :: status is error", async () => {
-    const txModel: TokenTransferTransaction = {
-      kind: "token.transfer",
-      uiState: {
-        subAccountId: wSolSubAccId,
-      },
-    };
     const ataWithRequiredMemoMock = {
       ...baseAta2022Mock,
       parsed: {
@@ -1433,20 +1409,11 @@ describe("solana tokens", () => {
     } as ChainAPI;
 
     const account: SolanaAccount = {
-      ...baseAccount,
-      freshAddress: testOnChainData.fundedSenderAddress,
+      ...baseSolanaAccount,
       subAccounts: [mockedToken2022Acc],
-      solanaResources: { stakes: [], unstakeReserve: BigNumber(0) },
     };
 
-    const tx: Transaction = {
-      model: txModel,
-      amount: new BigNumber(10),
-      recipient: testOnChainData.fundedAddress,
-      family: "solana",
-    };
-
-    const preparedTx = await prepareTransaction(account, tx, api);
+    const preparedTx = await prepareTransaction(account, baseTx, api);
     const receivedTxStatus = await getTransactionStatus(account, preparedTx);
     const expectedErrors = {
       memo: new SolanaRecipientMemoIsRequired(),
@@ -1454,5 +1421,94 @@ describe("solana tokens", () => {
     };
 
     expect(receivedTxStatus.errors).toEqual(expectedErrors);
+  });
+
+  test("token2022.transfer :: correct transfer fee extension calculations", async () => {
+    const baseToken2022MintMock = {
+      ...baseTokenMintMock,
+      data: {
+        ...baseTokenMintMock.data,
+        program: "spl-token-2022",
+      },
+    };
+
+    const magnitude = BigNumber(10).pow(baseTokenMintMock.data.parsed.info.decimals);
+    const mintWithTransferFeeMock: any = JSON.parse(JSON.stringify(baseToken2022MintMock));
+    const maxFee = BigNumber(10).times(magnitude).toNumber();
+    const bps = 100;
+    const transferConfigExt = {
+      extension: "transferFeeConfig",
+      state: {
+        newerTransferFee: {
+          epoch: 300,
+          maximumFee: maxFee,
+          transferFeeBasisPoints: bps,
+        },
+        olderTransferFee: {
+          epoch: 300,
+          maximumFee: maxFee,
+          transferFeeBasisPoints: bps,
+        },
+      },
+    };
+    mintWithTransferFeeMock.data.parsed.info.extensions = [transferConfigExt];
+    const api = {
+      ...baseAPI,
+      getAccountInfo: (address: string) => {
+        if (address === wSolToken.contractAddress) {
+          return Promise.resolve(mintWithTransferFeeMock as any);
+        }
+        return Promise.resolve({ data: baseAta2022Mock });
+      },
+      getBalance: () => Promise.resolve(BigNumber(100).times(magnitude).toNumber()),
+      getEpochInfo: () => Promise.resolve({ epoch: 300 } as any),
+    } as ChainAPI;
+
+    const account: SolanaAccount = {
+      ...baseSolanaAccount,
+      subAccounts: [
+        {
+          ...mockedToken2022Acc,
+          balance: BigNumber(100).times(magnitude),
+          spendableBalance: BigNumber(100).times(magnitude),
+        },
+      ],
+    };
+
+    const tx: Transaction = {
+      ...baseTx,
+      amount: BigNumber(1).times(magnitude),
+      model: {
+        ...baseTxModel,
+        uiState: {
+          ...baseTxModel.uiState,
+          includeTransferFees: true,
+        },
+      },
+    };
+
+    const preparedTx = await prepareTransaction(account, tx, api);
+    const receivedTxStatus = await getTransactionStatus(account, preparedTx);
+
+    const expectedTxStatus: TransactionStatus = {
+      amount: tx.amount,
+      estimatedFees: new BigNumber(testOnChainData.fees.lamportsPerSignature),
+      totalSpent: tx.amount,
+      errors: {},
+      warnings: {},
+    };
+    expect(receivedTxStatus).toEqual(expectedTxStatus);
+
+    const expectedExtensions = {
+      transferFee: calculateToken2022TransferFees({
+        transferAmount: tx.amount.toNumber(),
+        currentEpoch: 300,
+        transferFeeConfigState: transferConfigExt.state,
+      }),
+    };
+
+    expect(
+      (preparedTx.model.commandDescriptor?.command as TokenTransferCommand).extensions,
+    ).toEqual(expectedExtensions);
   });
 });

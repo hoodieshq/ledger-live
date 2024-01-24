@@ -11,7 +11,7 @@ import {
   TransactionStatusCommonRaw,
 } from "@ledgerhq/types-live";
 import { ValidatorsAppValidator } from "./validator-app";
-import { MintExtensions, TokenAccountState } from "./api/chain/account/tokenExtensions";
+import { TokenAccountState } from "./api/chain/account/tokenExtensions";
 
 export type TransferCommand = {
   kind: "transfer";
@@ -76,6 +76,14 @@ export type TokenRecipientDescriptor = {
   shouldCreateAsAssociatedTokenAccount: boolean;
 };
 
+export type TransferFeeCalculated = {
+  maxTransferFee: number;
+  transferFee: number;
+  feePercent: number;
+  transferAmountIncludingFee: number;
+  transferAmountExcludingFee: number;
+};
+
 export type TokenTransferCommand = {
   kind: "token.transfer";
   ownerAddress: string;
@@ -85,7 +93,9 @@ export type TokenTransferCommand = {
   mintAddress: string;
   mintDecimals: number;
   tokenProgram: SolanaTokenProgram;
-  tokenExtensions?: MintExtensions;
+  extensions?: {
+    transferFee?: TransferFeeCalculated;
+  };
   memo?: string;
 };
 

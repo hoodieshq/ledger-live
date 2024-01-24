@@ -10,7 +10,6 @@ import {
   Transaction as SolanaTransaction,
   SolanaAccount,
 } from "@ledgerhq/live-common/families/solana/types";
-import { useCalculateToken2022TransferFees } from "@ledgerhq/live-common/families/solana/react";
 import CounterValue from "~/components/CounterValue";
 import CurrencyUnitValue from "~/components/CurrencyUnitValue";
 
@@ -26,12 +25,12 @@ export default function TokenTransferFeesWarning({
   setTransaction: (..._: Array<Transaction>) => void;
 }) {
   const [shouldIncludeFees, setShouldIncludeFees] = useState(false);
-  const { transferFees, hasTransferFees } = useCalculateToken2022TransferFees(
-    transaction,
-    account as SolanaAccount,
-    tokenAccount,
-  );
-  if (!hasTransferFees || !transferFees) return null;
+  const transferFees =
+    transaction.model.commandDescriptor?.command.kind === "token.transfer"
+      ? transaction.model.commandDescriptor.command.extensions?.transferFee
+      : undefined;
+
+  if (!transferFees) return null;
 
   const {
     transferAmountExcludingFee,

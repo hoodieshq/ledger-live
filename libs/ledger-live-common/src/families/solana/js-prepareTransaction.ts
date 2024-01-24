@@ -16,6 +16,7 @@ import {
   getStakeAccountAddressWithSeed,
   getStakeAccountMinimumBalanceForRentExemption,
   getMaybeTokenMint,
+  ParsedOnChainMintWithInfo,
 } from "./api/chain/web3";
 import {
   SolanaAccountNotFunded,
@@ -39,6 +40,7 @@ import {
   SolanaRecipientMemoIsRequired,
 } from "./errors";
 import {
+  calculateToken2022TransferFees,
   decodeAccountIdWithTokenAccountAddress,
   isEd25519Address,
   isValidBase58Address,
@@ -67,7 +69,7 @@ import { assertUnreachable } from "./utils";
 import { defaultUpdateTransaction } from "@ledgerhq/coin-framework/bridge/jsHelpers";
 import { estimateFeeAndSpendable } from "./js-estimateMaxSpendable";
 import { TokenAccountInfo } from "./api/chain/account/token";
-import { MemoTransferExt } from "./api/chain/account/tokenExtensions";
+import { MemoTransferExt, TransferFeeConfigExt } from "./api/chain/account/tokenExtensions";
 
 async function deriveCommandDescriptor(
   mainAccount: SolanaAccount,
@@ -218,6 +220,8 @@ const deriveTokenTransferCommandDescriptor = async (
     errors.amount = new NotEnoughBalance();
   }
 
+  const transferFeeCalculatedConfig = await getMaybeTransferFee(txAmount, mintOrError, api);
+
   return {
     command: {
       kind: "token.transfer",
@@ -229,13 +233,35 @@ const deriveTokenTransferCommandDescriptor = async (
       recipientDescriptor: recipientDescriptor,
       memo: model.uiState.memo,
       tokenProgram: tokenProgram,
-      tokenExtensions: mintOrError.info.extensions,
+      // tokenExtensions: mintOrError.info.extensions,
+      extensions: {
+        transferFee: transferFeeCalculatedConfig,
+      },
     },
     fee: fee + assocAccRentExempt,
     warnings,
     errors,
   };
 };
+
+async function getMaybeTransferFee(
+  txAmount: number,
+  mint: ParsedOnChainMintWithInfo,
+  api: ChainAPI,
+) {
+  const transferFeeConfigExt = mint.info.extensions?.find(
+    tokenExt => tokenExt.extension === "transferFeeConfig",
+  ) as TransferFeeConfigExt;
+  if (!transferFeeConfigExt) return;
+
+  const { epoch } = await api.getEpochInfo();
+
+  return calculateToken2022TransferFees({
+    transferAmount: txAmount,
+    transferFeeConfigState: transferFeeConfigExt.state,
+    currentEpoch: epoch,
+  });
+}
 
 async function getTokenRecipient(
   recipientAddress: string,

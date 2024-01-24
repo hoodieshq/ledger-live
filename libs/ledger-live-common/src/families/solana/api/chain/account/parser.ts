@@ -5,6 +5,7 @@ import { ParsedInfo } from "../validators";
 import { StakeAccountInfo } from "./stake";
 import { MintAccountInfo, TokenAccount, TokenAccountInfo } from "./token";
 import { VoteAccount, VoteAccountInfo } from "./vote";
+import { isTokenProgram } from "../../../logic";
 
 export function parseTokenAccountInfo(info: unknown): TokenAccountInfo {
   return create(info, TokenAccountInfo);
@@ -16,7 +17,7 @@ export function tryParseAsTokenAccount(
   const routine = () => {
     const info = create(data.parsed, ParsedInfo);
 
-    if (data.program === "spl-token" || data.program === "spl-token-2022") {
+    if (isTokenProgram(data.program)) {
       const parsed = create(info, TokenAccount);
       if (parsed.type === "account") {
         return parseTokenAccountInfo(parsed.info);
@@ -72,7 +73,7 @@ export function tryParseAsMintAccount(
   const routine = () => {
     const info = create(data.parsed, ParsedInfo);
 
-    if (data.program === "spl-token" || data.program === "spl-token-2022") {
+    if (isTokenProgram(data.program)) {
       const parsed = create(info, TokenAccount);
       if (parsed.type === "mint") {
         return parseMintAccountInfo(parsed.info);

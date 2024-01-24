@@ -3,10 +3,8 @@ import BigNumber from "bignumber.js";
 import {
   Transaction,
   SolanaTokenAccount,
-  SolanaAccount,
   TokenTransferTransaction,
 } from "@ledgerhq/live-common/families/solana/types";
-import { useCalculateToken2022TransferFees } from "@ledgerhq/live-common/families/solana/react";
 import { Account } from "@ledgerhq/types-live";
 import { getAccountBridge } from "@ledgerhq/live-common/bridge/index";
 import Spinner from "~/renderer/components/Spinner";
@@ -32,11 +30,11 @@ export default function TokenTransferFeesWarning({
   tokenAccount,
   onChange,
 }: Props) {
-  const { hasTransferFees, transferFees, transferAmount } = useCalculateToken2022TransferFees(
-    transaction,
-    account as SolanaAccount,
-    tokenAccount,
-  );
+  const transferFees =
+    transaction.model.commandDescriptor?.command.kind === "token.transfer"
+      ? transaction.model.commandDescriptor.command.extensions?.transferFee
+      : undefined;
+
   const bridge = getAccountBridge(account);
 
   useEffect(() => {
@@ -66,10 +64,9 @@ export default function TokenTransferFeesWarning({
     transaction.useAllAmount,
     transferFees,
     tokenAccount.spendableBalance,
-    transferFees?.transferAmountIncludingFee,
   ]);
 
-  if (!hasTransferFees || !transferFees) return null;
+  if (!transferFees) return null;
 
   const onIncludeFeesToggle = (includeTransferFees: boolean) => {
     onChange(
@@ -91,6 +88,10 @@ export default function TokenTransferFeesWarning({
   };
 
   if (!transferFees) return <Spinner size={14} />;
+
+  const transferAmount = transaction.useAllAmount
+    ? tokenAccount.spendableBalance.toNumber()
+    : transaction.amount.toNumber();
 
   return (
     <div>

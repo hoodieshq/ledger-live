@@ -3,7 +3,13 @@ import { findTokenById } from "@ledgerhq/cryptoassets";
 import { PublicKey } from "@solana/web3.js";
 import { AccountLike, TokenAccount } from "@ledgerhq/types-live";
 import { StakeMeta } from "./api/chain/account/stake";
-import { SolanaStake, SolanaTokenAccount, SolanaTokenProgram, StakeAction } from "./types";
+import {
+  SolanaStake,
+  SolanaTokenAccount,
+  SolanaTokenProgram,
+  StakeAction,
+  TransferFeeCalculated,
+} from "./types";
 import { assertUnreachable } from "./utils";
 import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { TransferFeeConfigExt } from "./api/chain/account/tokenExtensions";
@@ -133,6 +139,10 @@ export function getTokenAccountProgramId(program: SolanaTokenProgram): typeof TO
   return program === "spl-token-2022" ? TOKEN_2022_PROGRAM_ID : TOKEN_PROGRAM_ID;
 }
 
+export function isTokenProgram(program: string): boolean {
+  return program === "spl-token" || program === "spl-token-2022";
+}
+
 // https://spl.solana.com/token-2022/extensions#transfer-fees
 export function calculateToken2022TransferFees({
   transferAmount,
@@ -145,13 +155,7 @@ export function calculateToken2022TransferFees({
     "newerTransferFee" | "olderTransferFee"
   >;
   currentEpoch: number;
-}): {
-  maxTransferFee: number;
-  transferFee: number;
-  feePercent: number;
-  transferAmountIncludingFee: number;
-  transferAmountExcludingFee: number;
-} {
+}): TransferFeeCalculated {
   const { newerTransferFee, olderTransferFee } = transferFeeConfigState;
   const transferFeeConfig =
     currentEpoch >= newerTransferFee.epoch ? newerTransferFee : olderTransferFee;
