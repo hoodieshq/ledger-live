@@ -3682,7 +3682,19 @@
         "feesPercentHint": "Token has {{feePercent}}% transfer fee.",
         "maxFeetHint": "Max transfer fee {{maxFee}} {{unit}}.",
         "amountExcludingFeesHint": "Recipient will receive {{amountExcludingFees}} {{unit}}.",
-        "includeFeesSwitch": "Include fees"
+        "includeFeesSwitch": "Include fees",
+        "notice": "Transfer fee {{fee}}%",
+        "tooltipHint": "Percentage of transfer witheld for token creator"
+      },
+      "nonTransferable": {
+        "notice": "Token is non-transferable"
+      },
+      "interestRate": {
+        "notice": "Interest rate: {{rate}}%"
+      },
+      "permanentDelegate": {
+        "notice": "Permantent delegate authority is enabled",
+        "tooltipHint": "Permanent delegate authority has the ability transfer or burn this token from your account"
       }
     }
   },

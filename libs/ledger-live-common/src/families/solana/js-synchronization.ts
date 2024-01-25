@@ -4,6 +4,7 @@ import BigNumber from "bignumber.js";
 import { emptyHistoryCache, encodeAccountId } from "../../account";
 import {
   getAccountMinimumBalanceForRentExemption,
+  getMaybeTokenMint,
   getTransactions,
   ParsedOnChainStakeAccountWithInfo,
   toStakeAccountWithInfo,
@@ -44,10 +45,12 @@ import {
   SolanaOperationExtra,
   SolanaStake,
   SolanaTokenAccount,
+  SolanaTokenAccountExtensions,
   SolanaTokenProgram,
 } from "./types";
 import { Account, Operation, OperationType, TokenAccount } from "@ledgerhq/types-live";
 import { DelegateInfo, WithdrawInfo } from "./api/chain/instruction/stake/types";
+import { MintExtensions } from "./api/chain/account/tokenExtensions";
 
 type OnChainTokenAccount = Awaited<ReturnType<typeof getAccount>>["tokenAccounts"][number];
 
@@ -68,6 +71,8 @@ export const getAccountShapeWithAPI = async (
     tokenAccounts: onChaintokenAccounts,
     stakes: onChainStakes,
   } = await getAccount(mainAccAddress, api);
+
+  const { epoch } = await api.getEpochInfo();
 
   const mainAccountId = encodeAccountId({
     type: "js",
@@ -97,11 +102,11 @@ export const getAccountShapeWithAPI = async (
       continue;
     }
 
-    const tokenProgram = accs[0].onChainAcc.account.data.program;
+    const tokenProgram = accs[0].onChainAcc.account.data.program as SolanaTokenProgram;
     const assocTokenAccAddress = await api.findAssocTokenAccAddress(
       mainAccAddress,
       mint,
-      tokenProgram as SolanaTokenProgram,
+      tokenProgram,
     );
 
     const assocTokenAcc = accs.find(
@@ -122,23 +127,31 @@ export const getAccountShapeWithAPI = async (
       api,
     );
 
+    const mintInfo =
+      tokenProgram === "spl-token-2022" ? await getMaybeTokenMint(mint, api) : undefined;
+
+    const mintExtensions =
+      mintInfo && !(mintInfo instanceof Error) ? mintInfo.info.extensions : undefined;
+
     const nextSubAcc =
       subAcc === undefined
         ? newSubAcc({
             mainAccountId,
             assocTokenAcc,
             txs,
+            mintExtensions,
+            epoch,
           })
         : patchedSubAcc({
             subAcc,
             assocTokenAcc,
             txs,
+            mintExtensions,
+            epoch,
           });
 
     nextSubAccs.push(nextSubAcc);
   }
-
-  const { epoch } = await api.getEpochInfo();
 
   const stakes: SolanaStake[] = onChainStakes.map(({ account, activation, reward }) => {
     const {
@@ -258,10 +271,14 @@ function newSubAcc({
   mainAccountId,
   assocTokenAcc,
   txs,
+  mintExtensions,
+  epoch,
 }: {
   mainAccountId: string;
   assocTokenAcc: OnChainTokenAccount;
   txs: TransactionDescriptor[];
+  mintExtensions?: MintExtensions;
+  epoch: number;
 }): SolanaTokenAccount {
   const firstTx = txs[txs.length - 1];
 
@@ -281,6 +298,8 @@ function newSubAcc({
 
   const newOps = compact(txs.map(tx => txToTokenAccOperation(tx, assocTokenAcc, accountId)));
 
+  const extensions = mintExtensions ? toSolanaTokenAccExtensions(mintExtensions, epoch) : undefined;
+
   return {
     balance,
     balanceHistoryCache: emptyHistoryCache,
@@ -294,7 +313,7 @@ function newSubAcc({
     starred: false,
     swapHistory: [],
     tokenProgram: assocTokenAcc.onChainAcc.account.data.program as SolanaTokenProgram,
-    // extensions
+    extensions,
     token: tokenCurrency,
     state: assocTokenAcc.info.state,
     type: "TokenAccount",
@@ -305,16 +324,21 @@ function patchedSubAcc({
   subAcc,
   assocTokenAcc,
   txs,
+  mintExtensions,
+  epoch,
 }: {
   subAcc: TokenAccount;
   assocTokenAcc: OnChainTokenAccount;
   txs: TransactionDescriptor[];
+  mintExtensions?: MintExtensions;
+  epoch: number;
 }): SolanaTokenAccount {
   const balance = new BigNumber(assocTokenAcc.info.tokenAmount.amount);
 
   const newOps = compact(txs.map(tx => txToTokenAccOperation(tx, assocTokenAcc, subAcc.id)));
 
   const totalOps = mergeOps(subAcc.operations, newOps);
+  const extensions = mintExtensions ? toSolanaTokenAccExtensions(mintExtensions, epoch) : undefined;
 
   return {
     ...subAcc,
@@ -323,7 +347,33 @@ function patchedSubAcc({
     operations: totalOps,
     state: assocTokenAcc.info.state,
     tokenProgram: assocTokenAcc.onChainAcc.account.data.program as SolanaTokenProgram,
+    extensions,
   };
+}
+
+function toSolanaTokenAccExtensions(mintExtensions: MintExtensions, epoch: number) {
+  return mintExtensions.reduce<SolanaTokenAccountExtensions>((acc, mintExt) => {
+    switch (mintExt.extension) {
+      case "interestBearingConfig":
+        return { ...acc, interestRateBps: mintExt.state.currentRate };
+      case "nonTransferable":
+        return { ...acc, nonTransferable: true };
+      case "permanentDelegate":
+        return { ...acc, permanentDelegate: true };
+      case "transferFeeConfig": {
+        const { newerTransferFee, olderTransferFee } = mintExt.state;
+        return {
+          ...acc,
+          transferFeeBps:
+            epoch >= newerTransferFee.epoch
+              ? newerTransferFee.transferFeeBasisPoints
+              : olderTransferFee.transferFeeBasisPoints,
+        };
+      }
+      default:
+        return acc;
+    }
+  }, {});
 }
 
 function txToMainAccOperation(

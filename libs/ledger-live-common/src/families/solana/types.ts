@@ -272,14 +272,23 @@ export type SolanaAccountRaw = AccountRaw & {
   solanaResources: SolanaResourcesRaw;
 };
 
+export type SolanaTokenAccountExtensions = {
+  permanentDelegate?: boolean;
+  nonTransferable?: boolean;
+  interestRateBps?: number;
+  transferFeeBps?: number;
+};
+
 export type SolanaTokenProgram = "spl-token" | "spl-token-2022";
 export type SolanaTokenAccount = TokenAccount & {
   state?: TokenAccountState;
   tokenProgram?: SolanaTokenProgram;
+  extensions?: SolanaTokenAccountExtensions;
 };
 export type SolanaTokenAccountRaw = TokenAccountRaw & {
   state?: TokenAccountState;
   tokenProgram?: SolanaTokenProgram;
+  extensions?: string;
 };
 
 export type TransactionStatus = TransactionStatusCommon;
