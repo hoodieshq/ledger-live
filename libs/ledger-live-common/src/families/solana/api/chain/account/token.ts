@@ -13,10 +13,13 @@ import {
   nullable,
 } from "superstruct";
 import { PublicKeyFromString } from "../validators/pubkey";
-import { MintExtensions, TokenAccountExtensions, AccountState } from "./tokenExtensions";
+import { MintExtensions, TokenAccountExtensions } from "./tokenExtensions";
 
 export type TokenAccountType = Infer<typeof TokenAccountType>;
 export const TokenAccountType = enums(["mint", "account", "multisig"]);
+
+export type TokenAccountState = Infer<typeof AccountState>;
+export const AccountState = enums(["initialized", "uninitialized", "frozen"]);
 
 const TokenAmount = type({
   decimals: number(),
