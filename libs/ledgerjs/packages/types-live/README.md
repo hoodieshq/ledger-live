@@ -43,8 +43,12 @@ Ledger Live main types.
         *   [Parameters](#parameters)
     *   [assignFromAccountRaw](#assignfromaccountraw)
         *   [Parameters](#parameters-1)
-    *   [initAccount](#initaccount)
+    *   [assignToTokenAccountRaw](#assigntotokenaccountraw)
         *   [Parameters](#parameters-2)
+    *   [assignFromTokenAccountRaw](#assignfromtokenaccountraw)
+        *   [Parameters](#parameters-3)
+    *   [initAccount](#initaccount)
+        *   [Parameters](#parameters-4)
 *   [CurrenciesData](#currenciesdata)
     *   [Properties](#properties-10)
 *   [DatasetTest](#datasettest)
@@ -440,6 +444,30 @@ Type: function (accountRaw: [AccountRaw](#accountraw), account: [Account](#accou
 
 *   `accountRaw` **[AccountRaw](#accountraw)** The account in its serialized form.
 *   `account` **[Account](#account)** The original account object.
+
+#### assignToTokenAccountRaw
+
+This function mutates the 'tokenAccountRaw' object in-place to add any extra fields that the coin may need to set.
+It is called during the serialization mechanism
+
+Type: function (tokenAccount: [TokenAccount](#tokenaccount), tokenAccountRaw: [TokenAccountRaw](#tokenaccountraw)): void
+
+##### Parameters
+
+*   `tokenAccount` **[TokenAccount](#tokenaccount)** The original token account object.
+*   `tokenAccountRaw` **[TokenAccountRaw](#tokenaccountraw)** The token account in its serialized form.
+
+#### assignFromTokenAccountRaw
+
+This function mutates the 'tokenAccount' object in-place to add any extra fields that the coin may need to set.
+It is called during the deserialization mechanism
+
+Type: function (tokenAccountRaw: [TokenAccountRaw](#tokenaccountraw), tokenAccount: [TokenAccount](#tokenaccount)): void
+
+##### Parameters
+
+*   `tokenAccountRaw` **[TokenAccountRaw](#tokenaccountraw)** The token account in its serialized form.
+*   `tokenAccount` **[TokenAccount](#tokenaccount)** The original token account object.
 
 #### initAccount
 
@@ -2201,7 +2229,7 @@ Type: {ticker: [string](https://developer.mozilla.org/docs/Web/JavaScript/Refere
 
 ### OperationType
 
-Type: (`"IN"` | `"OUT"` | `"NONE"` | `"CREATE"` | `"REVEAL"` | `"DELEGATE"` | `"UNDELEGATE"` | `"REDELEGATE"` | `"REWARD"` | `"FEES"` | `"FREEZE"` | `"UNFREEZE"` | `"WITHDRAW_EXPIRE_UNFREEZE"` | `"UNDELEGATE_RESOURCE"` | `"LEGACY_UNFREEZE"` | `"VOTE"` | `"REWARD_PAYOUT"` | `"BOND"` | `"UNBOND"` | `"WITHDRAW_UNBONDED"` | `"SET_CONTROLLER"` | `"SLASH"` | `"NOMINATE"` | `"CHILL"` | `"APPROVE"` | `"OPT_IN"` | `"OPT_OUT"` | `"LOCK"` | `"UNLOCK"` | `"WITHDRAW"` | `"REVOKE"` | `"ACTIVATE"` | `"REGISTER"` | `"NFT_IN"` | `"NFT_OUT"` | `"STAKE"` | `"UNSTAKE"` | `"WITHDRAW_UNSTAKED"`)
+Type: (`"IN"` | `"OUT"` | `"NONE"` | `"CREATE"` | `"REVEAL"` | `"DELEGATE"` | `"UNDELEGATE"` | `"REDELEGATE"` | `"REWARD"` | `"FEES"` | `"FREEZE"` | `"UNFREEZE"` | `"WITHDRAW_EXPIRE_UNFREEZE"` | `"UNDELEGATE_RESOURCE"` | `"LEGACY_UNFREEZE"` | `"VOTE"` | `"REWARD_PAYOUT"` | `"BOND"` | `"UNBOND"` | `"WITHDRAW_UNBONDED"` | `"SET_CONTROLLER"` | `"SLASH"` | `"NOMINATE"` | `"CHILL"` | `"APPROVE"` | `"OPT_IN"` | `"OPT_OUT"` | `"LOCK"` | `"UNLOCK"` | `"WITHDRAW"` | `"REVOKE"` | `"ACTIVATE"` | `"REGISTER"` | `"NFT_IN"` | `"NFT_OUT"` | `"STAKE"` | `"UNSTAKE"` | `"WITHDRAW_UNSTAKED"` | `"BURN"`)
 
 ### Operation
 

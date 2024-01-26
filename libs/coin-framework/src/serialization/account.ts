@@ -28,6 +28,7 @@ import {
 
 export type FromFamiliyRaw = {
   assignFromAccountRaw?: AccountBridge<TransactionCommon>["assignFromAccountRaw"];
+  assignFromTokenAccountRaw?: AccountBridge<TransactionCommon>["assignFromTokenAccountRaw"];
   fromOperationExtraRaw?: AccountBridge<TransactionCommon>["fromOperationExtraRaw"];
 };
 
@@ -123,6 +124,15 @@ export function fromAccountRaw(rawAccount: AccountRaw, fromRaw?: FromFamiliyRaw)
     fromRaw.assignFromAccountRaw(rawAccount, res);
   }
 
+  if (fromRaw?.assignFromTokenAccountRaw && res.subAccounts) {
+    res.subAccounts.forEach((subAcc, index) => {
+      const subAccRaw = subAccountsRaw?.[index];
+      if (subAcc.type === "TokenAccount" && subAccRaw?.type === "TokenAccountRaw") {
+        fromRaw.assignFromTokenAccountRaw?.(subAccRaw, subAcc);
+      }
+    });
+  }
+
   if (swapHistory) {
     res.swapHistory = swapHistory.map(fromSwapOperationRaw);
   }
@@ -132,6 +142,7 @@ export function fromAccountRaw(rawAccount: AccountRaw, fromRaw?: FromFamiliyRaw)
 
 export type ToFamiliyRaw = {
   assignToAccountRaw?: AccountBridge<TransactionCommon>["assignToAccountRaw"];
+  assignToTokenAccountRaw?: AccountBridge<TransactionCommon>["assignToTokenAccountRaw"];
   toOperationExtraRaw?: AccountBridge<TransactionCommon>["toOperationExtraRaw"];
 };
 
@@ -204,6 +215,15 @@ export function toAccountRaw(account: Account, toFamilyRaw?: ToFamiliyRaw): Acco
 
   if (toFamilyRaw?.assignToAccountRaw) {
     toFamilyRaw.assignToAccountRaw(account, res);
+  }
+
+  if (toFamilyRaw?.assignToTokenAccountRaw && res.subAccounts) {
+    res.subAccounts.forEach((subAccRaw, index) => {
+      const subAcc = subAccounts?.[index];
+      if (subAccRaw.type === "TokenAccountRaw" && subAcc?.type === "TokenAccount") {
+        toFamilyRaw.assignToTokenAccountRaw?.(subAcc, subAccRaw);
+      }
+    });
   }
 
   if (swapHistory) {

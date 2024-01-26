@@ -30,6 +30,8 @@ import {
   assignToAccountRaw,
   fromOperationExtraRaw,
   toOperationExtraRaw,
+  assignFromTokenAccountRaw,
+  assignToTokenAccountRaw,
 } from "../serialization";
 import type { SolanaAccount, SolanaPreloadDataV1, Transaction } from "../types";
 import { endpointByCurrencyId } from "../utils";
@@ -179,6 +181,8 @@ export function makeBridges({
     assignToAccountRaw,
     toOperationExtraRaw,
     fromOperationExtraRaw,
+    assignFromTokenAccountRaw,
+    assignToTokenAccountRaw,
   };
 
   const currencyBridge: CurrencyBridge = {
