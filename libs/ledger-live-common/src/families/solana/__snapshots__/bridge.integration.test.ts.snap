@@ -36,6 +36,7 @@ exports[`solana currency bridge scanAccounts solana seed 1 1`] = `
     "pendingOperations": [],
     "spendableBalance": "7960720",
     "starred": false,
+    "state": "initialized",
     "swapHistory": [],
     "tokenId": "solana/spl/So11111111111111111111111111111111111111112",
     "type": "TokenAccountRaw",
