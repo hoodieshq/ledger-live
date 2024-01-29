@@ -277,6 +277,7 @@ export type SolanaTokenAccountExtensions = {
   nonTransferable?: boolean;
   interestRateBps?: number;
   transferFeeBps?: number;
+  requiredMemoOnTransfer?: boolean;
 };
 
 export type SolanaTokenProgram = "spl-token" | "spl-token-2022";

@@ -50,7 +50,7 @@ import {
 } from "./types";
 import { Account, Operation, OperationType, TokenAccount } from "@ledgerhq/types-live";
 import { DelegateInfo, WithdrawInfo } from "./api/chain/instruction/stake/types";
-import { MintExtensions } from "./api/chain/account/tokenExtensions";
+import { MintExtensions, TokenAccountExtensions } from "./api/chain/account/tokenExtensions";
 
 type OnChainTokenAccount = Awaited<ReturnType<typeof getAccount>>["tokenAccounts"][number];
 
@@ -298,7 +298,10 @@ function newSubAcc({
 
   const newOps = compact(txs.map(tx => txToTokenAccOperation(tx, assocTokenAcc, accountId)));
 
-  const extensions = mintExtensions ? toSolanaTokenAccExtensions(mintExtensions, epoch) : undefined;
+  const extensions =
+    mintExtensions || assocTokenAcc.info.extensions
+      ? toSolanaTokenAccExtensions(mintExtensions, assocTokenAcc.info.extensions, epoch)
+      : undefined;
 
   return {
     balance,
@@ -338,7 +341,10 @@ function patchedSubAcc({
   const newOps = compact(txs.map(tx => txToTokenAccOperation(tx, assocTokenAcc, subAcc.id)));
 
   const totalOps = mergeOps(subAcc.operations, newOps);
-  const extensions = mintExtensions ? toSolanaTokenAccExtensions(mintExtensions, epoch) : undefined;
+  const extensions =
+    mintExtensions || assocTokenAcc.info.extensions
+      ? toSolanaTokenAccExtensions(mintExtensions, assocTokenAcc.info.extensions, epoch)
+      : undefined;
 
   return {
     ...subAcc,
@@ -351,29 +357,38 @@ function patchedSubAcc({
   };
 }
 
-function toSolanaTokenAccExtensions(mintExtensions: MintExtensions, epoch: number) {
-  return mintExtensions.reduce<SolanaTokenAccountExtensions>((acc, mintExt) => {
-    switch (mintExt.extension) {
-      case "interestBearingConfig":
-        return { ...acc, interestRateBps: mintExt.state.currentRate };
-      case "nonTransferable":
-        return { ...acc, nonTransferable: true };
-      case "permanentDelegate":
-        return { ...acc, permanentDelegate: true };
-      case "transferFeeConfig": {
-        const { newerTransferFee, olderTransferFee } = mintExt.state;
-        return {
-          ...acc,
-          transferFeeBps:
-            epoch >= newerTransferFee.epoch
-              ? newerTransferFee.transferFeeBasisPoints
-              : olderTransferFee.transferFeeBasisPoints,
-        };
+function toSolanaTokenAccExtensions(
+  mintExtensions: MintExtensions | undefined = [],
+  accExtension: TokenAccountExtensions | undefined = [],
+  epoch: number,
+) {
+  return [...mintExtensions, ...accExtension].reduce<SolanaTokenAccountExtensions>(
+    (acc, tokenExt) => {
+      switch (tokenExt.extension) {
+        case "interestBearingConfig":
+          return { ...acc, interestRateBps: tokenExt.state.currentRate };
+        case "nonTransferable":
+          return { ...acc, nonTransferable: true };
+        case "permanentDelegate":
+          return { ...acc, permanentDelegate: true };
+        case "memoTransfer":
+          return { ...acc, requiredMemoOnTransfer: !!tokenExt.state.requireIncomingTransferMemos };
+        case "transferFeeConfig": {
+          const { newerTransferFee, olderTransferFee } = tokenExt.state;
+          return {
+            ...acc,
+            transferFeeBps:
+              epoch >= newerTransferFee.epoch
+                ? newerTransferFee.transferFeeBasisPoints
+                : olderTransferFee.transferFeeBasisPoints,
+          };
+        }
+        default:
+          return acc;
       }
-      default:
-        return acc;
-    }
-  }, {});
+    },
+    {},
+  );
 }
 
 function txToMainAccOperation(

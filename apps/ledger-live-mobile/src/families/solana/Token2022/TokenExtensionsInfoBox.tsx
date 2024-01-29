@@ -54,6 +54,16 @@ export default function TokenExtensionsInfoBox({
               tooltip={<Trans i18nKey="solana.token.transferFees.tooltipHint" />}
             />
           )}
+          {!!extensions.requiredMemoOnTransfer && (
+            <TooltipLabel
+              label={
+                <Text>
+                  <Trans i18nKey="solana.token.requiredMemoOnTransfer.notice" />
+                </Text>
+              }
+              tooltip={<Trans i18nKey="solana.token.requiredMemoOnTransfer.tooltipHint" />}
+            />
+          )}
         </Flex>
       </Alert>
     </View>

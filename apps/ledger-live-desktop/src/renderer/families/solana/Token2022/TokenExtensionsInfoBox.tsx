@@ -48,6 +48,15 @@ export default function TokenExtensionsInfoBox({ extensions, ...boxProps }: Prop
               </Text>
             </LabelInfoTooltip>
           )}
+          {!!extensions.requiredMemoOnTransfer && (
+            <LabelInfoTooltip
+              text={<Trans i18nKey="solana.token.requiredMemoOnTransfer.tooltipHint" />}
+            >
+              <Text>
+                <Trans i18nKey="solana.token.requiredMemoOnTransfer.notice" />
+              </Text>
+            </LabelInfoTooltip>
+          )}
         </Box>
       </Alert>
     </Box>

@@ -5798,6 +5798,10 @@
       "permanentDelegate": {
         "notice": "Permantent delegate authority is enabled",
         "tooltipHint": "Permanent delegate authority has the ability transfer or burn this token from your account"
+      },
+      "requiredMemoOnTransfer": {
+        "notice": "Required memo on transfer is enabled",
+        "tooltipHint": "All incoming transfers to this account must have a memo"
       }
     }
   },
