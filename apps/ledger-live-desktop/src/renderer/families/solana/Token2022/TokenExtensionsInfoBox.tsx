@@ -16,16 +16,12 @@ type Props = SpaceProps & {
 export default function TokenExtensionsInfoBox({ extensions, ...boxProps }: Props) {
   return (
     <Box {...boxProps}>
-      <Alert
-        type="hint"
-        learnMoreOnRight={true}
-        onLearnMore={() => console.log("to be implemented")}
-      >
+      <Alert type="hint">
         <Box flexDirection="column">
           {!!extensions.interestRateBps && (
             <Text>
               <Trans
-                i18nKey="solana.token.interestRate.interestRate"
+                i18nKey="solana.token.interestRate.notice"
                 values={{ rate: BigNumber(extensions.interestRateBps).div(100).toNumber() }}
               />
             </Text>
