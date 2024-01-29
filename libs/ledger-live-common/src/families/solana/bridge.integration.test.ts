@@ -1,6 +1,7 @@
 import "../../__tests__/test-helpers/setup";
 import { testBridge } from "../../__tests__/test-helpers/bridge";
 import BigNumber from "bignumber.js";
+import cloneDeep from "lodash/cloneDeep";
 import {
   SolanaAccount,
   SolanaStake,
@@ -34,6 +35,7 @@ import {
   SolanaStakeAccountRequired,
   SolanaTokenAccountFrozen,
   SolanaTokenAccountHoldsAnotherToken,
+  SolanaTokenNonTransferable,
   SolanaValidatorRequired,
 } from "./errors";
 import {
@@ -54,6 +56,7 @@ import getTransactionStatus from "./js-getTransactionStatus";
 import { prepareTransaction } from "./js-prepareTransaction";
 import { encodeAccountId } from "../../account";
 import { LATEST_BLOCKHASH_MOCK } from "./bridge/mock-data";
+import { NonTransferableExt, TransferFeeConfigExt } from "./api/chain/account/tokenExtensions";
 
 // do not change real properties or the test will break
 const testOnChainData = {
@@ -1238,6 +1241,13 @@ describe("solana tokens", () => {
     ...baseTokenMintMock,
     data: {
       ...baseTokenMintMock.data,
+      parsed: {
+        ...baseTokenMintMock.data.parsed,
+        info: {
+          ...baseTokenMintMock.data.parsed.info,
+          extensions: [] as any[],
+        },
+      },
       program: "spl-token-2022",
     },
   };
@@ -1424,19 +1434,13 @@ describe("solana tokens", () => {
   });
 
   test("token2022.transfer :: correct transfer fee extension calculations", async () => {
-    const baseToken2022MintMock = {
-      ...baseTokenMintMock,
-      data: {
-        ...baseTokenMintMock.data,
-        program: "spl-token-2022",
-      },
-    };
+    const mintWithTransferFeeMock = cloneDeep(baseToken2022MintMock);
+    mintWithTransferFeeMock.data.program = "spl-token-2022";
 
     const magnitude = BigNumber(10).pow(baseTokenMintMock.data.parsed.info.decimals);
-    const mintWithTransferFeeMock: any = JSON.parse(JSON.stringify(baseToken2022MintMock));
     const maxFee = BigNumber(10).times(magnitude).toNumber();
     const bps = 100;
-    const transferConfigExt = {
+    const transferConfigExt: TransferFeeConfigExt = {
       extension: "transferFeeConfig",
       state: {
         newerTransferFee: {
@@ -1449,6 +1453,9 @@ describe("solana tokens", () => {
           maximumFee: maxFee,
           transferFeeBasisPoints: bps,
         },
+        transferFeeConfigAuthority: null,
+        withdrawWithheldAuthority: null,
+        withheldAmount: 0,
       },
     };
     mintWithTransferFeeMock.data.parsed.info.extensions = [transferConfigExt];
@@ -1510,5 +1517,29 @@ describe("solana tokens", () => {
     expect(
       (preparedTx.model.commandDescriptor?.command as TokenTransferCommand).extensions,
     ).toEqual(expectedExtensions);
+  });
+
+  test("token2022.transfer :: NonTransferable token :: tx returns SolanaTokenNonTransferable error", async () => {
+    const mintWithNonTransferableExtensionMock = cloneDeep(baseToken2022MintMock);
+    mintWithNonTransferableExtensionMock.data.parsed.info.extensions = [
+      { extension: "nonTransferable" } as NonTransferableExt,
+    ];
+    const api = {
+      ...baseAPI,
+      getAccountInfo: (address: string) => {
+        if (address === wSolToken.contractAddress) {
+          return Promise.resolve(mintWithNonTransferableExtensionMock as any);
+        }
+        return Promise.resolve({ data: baseAta2022Mock } as any);
+      },
+      getBalance: () => Promise.resolve(10),
+    } as ChainAPI;
+
+    const account: SolanaAccount = {
+      ...baseSolanaAccount,
+      subAccounts: [mockedToken2022Acc],
+    };
+
+    expect(prepareTransaction(account, baseTx, api)).rejects.toThrow(SolanaTokenNonTransferable);
   });
 });

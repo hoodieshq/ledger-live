@@ -38,6 +38,7 @@ import {
   SolanaTokenRecipientIsSenderATA,
   SolanaValidatorRequired,
   SolanaRecipientMemoIsRequired,
+  SolanaTokenNonTransferable,
 } from "./errors";
 import {
   calculateToken2022TransferFees,
@@ -218,6 +219,10 @@ const deriveTokenTransferCommandDescriptor = async (
 
   if (!errors.amount && txAmount > tokenAccount.spendableBalance.toNumber()) {
     errors.amount = new NotEnoughBalance();
+  }
+
+  if (mintOrError.info.extensions?.some(ext => ext.extension === "nonTransferable")) {
+    throw new SolanaTokenNonTransferable();
   }
 
   const transferFeeCalculatedConfig = await getMaybeTransferFee(txAmount, mintOrError, api);

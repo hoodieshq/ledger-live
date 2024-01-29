@@ -5962,6 +5962,10 @@
     "SolanaRecipientMemoIsRequired": {
       "title": "Memo is required for recipient address"
     },
+    "SolanaTokenNonTransferable": {
+      "title": "Token is non-transferable",
+      "description": "Such tokens are \"soul-bound\" and cannot be transfered"
+    },
     "NotEnoughNftOwned": {
       "title": "You have exceeded the number of available tokens"
     },

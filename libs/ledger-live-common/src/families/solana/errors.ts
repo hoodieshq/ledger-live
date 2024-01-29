@@ -65,3 +65,5 @@ export const SolanaTxConfirmationTimeout = createCustomErrorClass("SolanaTxConfi
 export const SolanaRecipientMemoIsRequired = createCustomErrorClass(
   "SolanaRecipientMemoIsRequired",
 );
+
+export const SolanaTokenNonTransferable = createCustomErrorClass("SolanaTokenNonTransferable");
