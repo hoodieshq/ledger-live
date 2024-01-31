@@ -780,7 +780,7 @@
     },
     "SolanaTokenNonTransferable": {
       "title": "Token is non-transferable",
-      "description": "Such tokens are \"soul-bound\" and cannot be transfered"
+      "description": "Such tokens are \"soul-bound\" and cannot be transferred"
     },
     "CardanoMinAmountError": {
       "title": "Minimum sendable amount is {{amount}} ADA"
@@ -5787,7 +5787,7 @@
         "amountExcludingFeesHint": "Recipient will receive {{amountExcludingFees}} {{unit}}.",
         "includeFeesSwitch": "Include fees",
         "notice": "Transfer fee {{fee}}%",
-        "tooltipHint": "Percentage of transfer witheld for token creator"
+        "tooltipHint": "Percentage of transfer withheld for token creator"
       },
       "nonTransferable": {
         "notice": "Token is non-transferable"
@@ -5796,7 +5796,7 @@
         "notice": "Interest rate: {{rate}}%"
       },
       "permanentDelegate": {
-        "notice": "Permantent delegate authority is enabled",
+        "notice": "Permanent delegate authority is enabled",
         "tooltipHint": "Permanent delegate authority has the ability transfer or burn this token from your account"
       },
       "requiredMemoOnTransfer": {
