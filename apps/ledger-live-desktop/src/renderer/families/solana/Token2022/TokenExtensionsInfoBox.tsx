@@ -14,15 +14,18 @@ type Props = SpaceProps & {
 };
 
 export default function TokenExtensionsInfoBox({ extensions, ...boxProps }: Props) {
+  const extensionsSize = Object.values(extensions);
+  if (!extensionsSize.length) return null;
+
   return (
     <Box {...boxProps}>
       <Alert type="hint">
         <Box flexDirection="column">
-          {!!extensions.interestRateBps && (
+          {!!extensions.interestRate && (
             <Text>
               <Trans
                 i18nKey="solana.token.interestRate.notice"
-                values={{ rate: BigNumber(extensions.interestRateBps).div(100).toNumber() }}
+                values={{ rate: BigNumber(extensions.interestRate.rateBps).div(100).toNumber() }}
               />
             </Text>
           )}
@@ -32,18 +35,25 @@ export default function TokenExtensionsInfoBox({ extensions, ...boxProps }: Prop
             </Text>
           )}
           {!!extensions.permanentDelegate && (
-            <LabelInfoTooltip text={<Trans i18nKey="solana.token.permanentDelegate.tooltipHint" />}>
+            <LabelInfoTooltip
+              text={
+                <Trans
+                  i18nKey="solana.token.permanentDelegate.tooltipHint"
+                  values={{ delegateAddress: extensions.permanentDelegate.delegateAddress }}
+                />
+              }
+            >
               <Text>
                 <Trans i18nKey="solana.token.permanentDelegate.notice" />
               </Text>
             </LabelInfoTooltip>
           )}
-          {!!extensions.transferFeeBps && (
+          {!!extensions.transferFee && (
             <LabelInfoTooltip text={<Trans i18nKey="solana.token.transferFees.tooltipHint" />}>
               <Text>
                 <Trans
                   i18nKey="solana.token.transferFees.notice"
-                  values={{ fee: BigNumber(extensions.transferFeeBps).div(100).toNumber() }}
+                  values={{ fee: BigNumber(extensions.transferFee.feeBps).div(100).toNumber() }}
                 />
               </Text>
             </LabelInfoTooltip>

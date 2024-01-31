@@ -272,11 +272,18 @@ export type SolanaAccountRaw = AccountRaw & {
   solanaResources: SolanaResourcesRaw;
 };
 
+type Base58PubKey = string;
 export type SolanaTokenAccountExtensions = {
-  permanentDelegate?: boolean;
+  permanentDelegate?: {
+    delegateAddress: Base58PubKey;
+  };
   nonTransferable?: boolean;
-  interestRateBps?: number;
-  transferFeeBps?: number;
+  interestRate?: {
+    rateBps: number;
+  };
+  transferFee?: {
+    feeBps: number;
+  };
   requiredMemoOnTransfer?: boolean;
 };
 

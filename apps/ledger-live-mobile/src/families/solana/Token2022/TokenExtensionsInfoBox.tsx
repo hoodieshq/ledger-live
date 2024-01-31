@@ -12,17 +12,17 @@ export default function TokenExtensionsInfoBox({
   extensions: SolanaTokenAccountExtensions;
 }) {
   const extensionsSize = Object.values(extensions);
-  if (!extensionsSize) return null;
+  if (!extensionsSize.length) return null;
 
   return (
     <View>
       <Alert showIcon={extensionsSize.length === 1} type="info">
         <Flex flexDirection="column" columnGap={4} alignItems="flex-start">
-          {!!extensions.interestRateBps && (
+          {!!extensions.interestRate && (
             <Text>
               <Trans
                 i18nKey="solana.token.interestRate.notice"
-                values={{ rate: BigNumber(extensions.interestRateBps).div(100).toNumber() }}
+                values={{ rate: BigNumber(extensions.interestRate.rateBps).div(100).toNumber() }}
               />
             </Text>
           )}
@@ -38,16 +38,21 @@ export default function TokenExtensionsInfoBox({
                   <Trans i18nKey="solana.token.permanentDelegate.notice" />
                 </Text>
               }
-              tooltip={<Trans i18nKey="solana.token.permanentDelegate.tooltipHint" />}
+              tooltip={
+                <Trans
+                  i18nKey="solana.token.permanentDelegate.tooltipHint"
+                  values={{ delegateAddress: extensions.permanentDelegate.delegateAddress }}
+                />
+              }
             />
           )}
-          {!!extensions.transferFeeBps && (
+          {!!extensions.transferFee && (
             <TooltipLabel
               label={
                 <Text>
                   <Trans
                     i18nKey="solana.token.transferFees.notice"
-                    values={{ fee: BigNumber(extensions.transferFeeBps).div(100).toNumber() }}
+                    values={{ fee: BigNumber(extensions.transferFee.feeBps).div(100).toNumber() }}
                   />
                 </Text>
               }

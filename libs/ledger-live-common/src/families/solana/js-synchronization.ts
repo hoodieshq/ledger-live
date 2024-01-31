@@ -366,21 +366,27 @@ function toSolanaTokenAccExtensions(
     (acc, tokenExt) => {
       switch (tokenExt.extension) {
         case "interestBearingConfig":
-          return { ...acc, interestRateBps: tokenExt.state.currentRate };
+          return { ...acc, interestRate: { rateBps: tokenExt.state.currentRate } };
         case "nonTransferable":
           return { ...acc, nonTransferable: true };
         case "permanentDelegate":
-          return { ...acc, permanentDelegate: true };
+          if (!tokenExt.state.delegate) return acc;
+          return {
+            ...acc,
+            permanentDelegate: { delegateAddress: tokenExt.state.delegate.toBase58() },
+          };
         case "memoTransfer":
           return { ...acc, requiredMemoOnTransfer: !!tokenExt.state.requireIncomingTransferMemos };
         case "transferFeeConfig": {
           const { newerTransferFee, olderTransferFee } = tokenExt.state;
           return {
             ...acc,
-            transferFeeBps:
-              epoch >= newerTransferFee.epoch
-                ? newerTransferFee.transferFeeBasisPoints
-                : olderTransferFee.transferFeeBasisPoints,
+            transferFee: {
+              feeBps:
+                epoch >= newerTransferFee.epoch
+                  ? newerTransferFee.transferFeeBasisPoints
+                  : olderTransferFee.transferFeeBasisPoints,
+            },
           };
         }
         default:
