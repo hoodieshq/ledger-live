@@ -285,6 +285,9 @@ export type SolanaTokenAccountExtensions = {
     feeBps: number;
   };
   requiredMemoOnTransfer?: boolean;
+  transferHook?: {
+    programAddress: Base58PubKey | undefined;
+  };
 };
 
 export type SolanaTokenProgram = "spl-token" | "spl-token-2022";

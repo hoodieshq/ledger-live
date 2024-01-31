@@ -389,6 +389,10 @@ function toSolanaTokenAccExtensions(
             },
           };
         }
+        case "transferHook": {
+          if (!tokenExt.state.programId) return acc;
+          return { ...acc, transferHook: { programAddress: tokenExt.state.programId.toBase58() } };
+        }
         default:
           return acc;
       }

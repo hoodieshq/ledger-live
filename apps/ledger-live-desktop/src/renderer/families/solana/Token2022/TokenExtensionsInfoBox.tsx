@@ -67,6 +67,20 @@ export default function TokenExtensionsInfoBox({ extensions, ...boxProps }: Prop
               </Text>
             </LabelInfoTooltip>
           )}
+          {!!extensions.transferHook && (
+            <LabelInfoTooltip
+              text={
+                <Trans
+                  i18nKey="solana.token.transferHook.tooltipHint"
+                  values={{ programAddress: extensions.transferHook.programAddress }}
+                />
+              }
+            >
+              <Text>
+                <Trans i18nKey="solana.token.transferHook.notice" />
+              </Text>
+            </LabelInfoTooltip>
+          )}
         </Box>
       </Alert>
     </Box>

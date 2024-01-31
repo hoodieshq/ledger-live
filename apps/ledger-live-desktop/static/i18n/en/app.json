@@ -3699,6 +3699,10 @@
       "requiredMemoOnTransfer": {
         "notice": "Required memo on transfer is enabled",
         "tooltipHint": "All incoming transfers to this account must have a memo"
+      },
+      "transferHook": {
+        "notice": "Transfer hook is enabled",
+        "tooltipHint": "Tokens has extra functionality handled by {{programAddress}}"
       }
     }
   },
