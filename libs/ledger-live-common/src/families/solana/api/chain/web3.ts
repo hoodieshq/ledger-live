@@ -1,6 +1,7 @@
 import {
   createAssociatedTokenAccountInstruction,
   createTransferCheckedInstruction,
+  createTransferCheckedWithTransferHookInstruction,
   getAssociatedTokenAddress,
 } from "@solana/spl-token";
 import {
@@ -164,9 +165,10 @@ export const buildTransferInstructions = ({
   return instructions;
 };
 
-export const buildTokenTransferInstructions = (
+export const buildTokenTransferInstructions = async (
   command: TokenTransferCommand,
-): TransactionInstruction[] => {
+  api: ChainAPI,
+): Promise<TransactionInstruction[]> => {
   const {
     ownerAddress,
     ownerAssociatedTokenAccountAddress,
@@ -201,18 +203,32 @@ export const buildTokenTransferInstructions = (
     );
   }
 
-  instructions.push(
-    createTransferCheckedInstruction(
-      new PublicKey(ownerAssociatedTokenAccountAddress),
-      mintPubkey,
-      destinationPubkey,
-      ownerPubkey,
-      amount,
-      mintDecimals,
-      undefined,
-      programId,
-    ),
-  );
+  const transferIx =
+    tokenProgram === "spl-token-2022"
+      ? await createTransferCheckedWithTransferHookInstruction(
+          api.connection,
+          new PublicKey(ownerAssociatedTokenAccountAddress),
+          mintPubkey,
+          destinationPubkey,
+          ownerPubkey,
+          BigInt(amount),
+          mintDecimals,
+          undefined,
+          "confirmed",
+          programId,
+        )
+      : createTransferCheckedInstruction(
+          new PublicKey(ownerAssociatedTokenAccountAddress),
+          mintPubkey,
+          destinationPubkey,
+          ownerPubkey,
+          amount,
+          mintDecimals,
+          undefined,
+          programId,
+        );
+
+  instructions.push(transferIx);
 
   if (memo) {
     instructions.push(

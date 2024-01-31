@@ -79,6 +79,7 @@ export type ChainAPI = Readonly<{
   getEpochInfo: () => ReturnType<Connection["getEpochInfo"]>;
 
   config: Config;
+  connection: Connection;
 }>;
 
 // Naive mode, allow us to filter in sentry all this error comming from Sol RPC node
@@ -219,5 +220,6 @@ export function getChainAPI(
     getEpochInfo: () => connection().getEpochInfo().catch(remapErrors),
 
     config,
+    connection: connection(),
   };
 }
