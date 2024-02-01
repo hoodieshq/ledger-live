@@ -3702,7 +3702,7 @@
       },
       "transferHook": {
         "notice": "Transfer hook is enabled",
-        "tooltipHint": "Tokens has extra functionality handled by {{programAddress}}"
+        "tooltipHint": "Token has extra functionality handled by {{programAddress}} program"
       }
     }
   },

@@ -281,8 +281,7 @@ function newSubAcc({
   epoch: number;
 }): SolanaTokenAccount {
   const firstTx = txs[txs.length - 1];
-
-  const creationDate = new Date((firstTx.info.blockTime ?? Date.now() / 1000) * 1000);
+  const creationDate = new Date((firstTx?.info?.blockTime ?? Date.now() / 1000) * 1000);
 
   const tokenId = toTokenId(assocTokenAcc.info.mint.toBase58());
   const tokenCurrency = getTokenById(tokenId);
@@ -358,11 +357,11 @@ function patchedSubAcc({
 }
 
 function toSolanaTokenAccExtensions(
-  mintExtensions: MintExtensions | undefined = [],
-  accExtension: TokenAccountExtensions | undefined = [],
+  mintExtensions: MintExtensions | undefined,
+  accExtension: TokenAccountExtensions | undefined,
   epoch: number,
 ) {
-  return [...mintExtensions, ...accExtension].reduce<SolanaTokenAccountExtensions>(
+  return [...(mintExtensions || []), ...(accExtension || [])].reduce<SolanaTokenAccountExtensions>(
     (acc, tokenExt) => {
       switch (tokenExt.extension) {
         case "interestBearingConfig":
