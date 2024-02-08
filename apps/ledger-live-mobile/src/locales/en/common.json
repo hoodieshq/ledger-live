@@ -5782,11 +5782,9 @@
       "frozenStateWarning": "Account assets are frozen!",
       "transferFees": {
         "title": "Transfer fees",
-        "feesPercentHint": "Token has {{feePercent}}% transfer fee.",
-        "maxFeetHint": "Max transfer fee {{maxFee}} {{unit}}.",
-        "amountExcludingFeesHint": "Recipient will receive {{amountExcludingFees}} {{unit}}.",
-        "includeFeesSwitch": "Include fees",
+        "feesPercentHint": "Token has {{feePercent}}% ({{feeBps}}bps) transfer fee ({{maxFee}} max)",
         "notice": "Transfer fee {{fee}}%",
+        "feeWithholdingAddressLabel": "Fee withholding address",
         "tooltipHint": "Percentage of transfer withheld for token creator"
       },
       "nonTransferable": {

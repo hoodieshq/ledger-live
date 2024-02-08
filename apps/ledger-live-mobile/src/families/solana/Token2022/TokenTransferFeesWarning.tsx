@@ -1,30 +1,29 @@
-import React, { useState } from "react";
-import { StyleSheet, View, Switch } from "react-native";
+import React from "react";
+import { StyleSheet, View } from "react-native";
 import { Trans } from "react-i18next";
 import BigNumber from "bignumber.js";
-import { Flex, Text } from "@ledgerhq/native-ui";
+import { Text } from "@ledgerhq/native-ui";
 import { TokenAccount } from "@ledgerhq/types-live";
 import { Transaction } from "@ledgerhq/live-common/generated/types";
-import { getAccountBridge } from "@ledgerhq/live-common/bridge/index";
+import { formatCurrencyUnit } from "@ledgerhq/live-common/currencies/index";
 import {
   Transaction as SolanaTransaction,
   SolanaAccount,
 } from "@ledgerhq/live-common/families/solana/types";
 import CounterValue from "~/components/CounterValue";
 import CurrencyUnitValue from "~/components/CurrencyUnitValue";
+import SummaryRow from "~/screens/SendFunds/SummaryRow";
+import TooltipLabel from "~/components/TooltipLabel";
 
 export default function TokenTransferFeesWarning({
-  account,
   tokenAccount,
   transaction,
-  setTransaction,
 }: {
   account: SolanaAccount;
   tokenAccount: TokenAccount;
   transaction: SolanaTransaction;
   setTransaction: (..._: Array<Transaction>) => void;
 }) {
-  const [shouldIncludeFees, setShouldIncludeFees] = useState(false);
   const transferFees =
     transaction.model.commandDescriptor?.command.kind === "token.transfer"
       ? transaction.model.commandDescriptor.command.extensions?.transferFee
@@ -32,31 +31,37 @@ export default function TokenTransferFeesWarning({
 
   if (!transferFees) return null;
 
-  const {
-    transferAmountExcludingFee,
-    transferAmountIncludingFee,
-    transferFee,
-    maxTransferFee,
-    feePercent,
-  } = transferFees;
+  const { transferFee, maxTransferFee, feePercent, feeBps } = transferFees;
   const tokenUnit = tokenAccount.token.units[0];
 
-  const toggleIncludeFees = (includeFees: boolean) => {
-    const bridge = getAccountBridge(account);
-    setTransaction(
-      bridge.updateTransaction(transaction, {
-        amount: BigNumber(includeFees ? transferAmountIncludingFee : transferAmountExcludingFee),
-      }),
-    );
-    setShouldIncludeFees(includeFees);
-  };
-
   return (
-    <View style={{ paddingVertical: 16, width: "100%" }}>
-      <Flex flexDirection="row" justifyContent="space-between">
-        <Text color="grey" fontSize={14}>
-          <Trans i18nKey="solana.token.transferFees.title" />
-        </Text>
+    <View>
+      <SummaryRow
+        title={<Trans i18nKey="send.fees.title" />}
+        additionalInfo={
+          <>
+            <TooltipLabel
+              label={<></>}
+              tooltip={
+                <Text fontSize={styles.smallText.fontSize}>
+                  <Trans
+                    i18nKey="solana.token.transferFees.feesPercentHint"
+                    values={{
+                      feePercent,
+                      feeBps,
+                      maxFee: formatCurrencyUnit(tokenUnit, new BigNumber(maxTransferFee), {
+                        disableRounding: true,
+                        alwaysShowSign: false,
+                        showCode: true,
+                      }),
+                    }}
+                  />
+                </Text>
+              }
+            />
+          </>
+        }
+      >
         <View style={{ alignItems: "flex-end" }}>
           <View style={styles.accountContainer}>
             <Text style={styles.valueText}>
@@ -71,67 +76,17 @@ export default function TokenTransferFeesWarning({
             />
           </Text>
         </View>
-      </Flex>
-      <Flex
-        flexWrap="wrap"
-        rowGap={4}
-        flexDirection="row"
-        justifyContent="space-between"
-        alignItems="center"
-      >
-        <View style={{ width: "60%" }}>
-          <Text fontSize={styles.smallText.fontSize}>
-            <Trans
-              i18nKey="solana.token.transferFees.feesPercentHint"
-              values={{
-                feePercent: feePercent,
-              }}
-            />
-          </Text>
-          {transferFee === maxTransferFee && (
-            <Text fontSize={styles.smallText.fontSize}>
-              <Trans
-                i18nKey="solana.token.transferFees.maxFeetHint"
-                values={{
-                  maxFee: fromTokenMagnitude(maxTransferFee, tokenUnit.magnitude),
-                  unit: tokenUnit.code,
-                }}
-              />
-            </Text>
-          )}
-          <Text fontSize={styles.smallText.fontSize}>
-            <Trans
-              i18nKey="solana.token.transferFees.amountExcludingFeesHint"
-              values={{
-                amountExcludingFees: `~${fromTokenMagnitude(
-                  transferAmountExcludingFee,
-                  tokenUnit.magnitude,
-                )}`,
-                unit: tokenUnit.code,
-              }}
-            />
+      </SummaryRow>
+
+      <SummaryRow title={<Trans i18nKey="solana.token.transferFees.feeWithholdingAddressLabel" />}>
+        <View style={{ flex: 1, alignItems: "flex-end" }}>
+          <Text ellipsizeMode="tail" numberOfLines={1} style={styles.valueText}>
+            {transaction.recipient}
           </Text>
         </View>
-        <View style={styles.availableRight}>
-          <Text color="grey" mr={2}>
-            <Trans i18nKey="solana.token.transferFees.includeFeesSwitch" />
-          </Text>
-          <Switch
-            value={shouldIncludeFees}
-            disabled={
-              transaction.useAllAmount ||
-              tokenAccount.spendableBalance.lt(transferAmountIncludingFee)
-            }
-            onValueChange={toggleIncludeFees}
-          />
-        </View>
-      </Flex>
+      </SummaryRow>
     </View>
   );
-}
-
-function fromTokenMagnitude(value: number, magnitude: number) {
-  return BigNumber(value).div(BigNumber(10).pow(magnitude)).toNumber();
 }
 
 const styles = StyleSheet.create({
