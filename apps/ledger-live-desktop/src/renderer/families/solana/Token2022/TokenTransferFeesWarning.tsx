@@ -1,8 +1,10 @@
 import React from "react";
+import BigNumber from "bignumber.js";
+import { Trans } from "react-i18next";
+import { formatCurrencyUnit } from "@ledgerhq/coin-framework/currencies/index";
 import { Transaction, SolanaTokenAccount } from "@ledgerhq/live-common/families/solana/types";
 import { Account } from "@ledgerhq/types-live";
 import Alert from "~/renderer/components/Alert";
-import { Trans } from "react-i18next";
 
 type Props = {
   account: Account;
@@ -28,14 +30,15 @@ export default function TokenTransferFeesWarning({ transaction, tokenAccount }: 
           values={{
             feePercent: transferFees.feePercent,
             feeBps: transferFees.feeBps,
-          }}
-        />
-        <br />
-        <Trans
-          i18nKey="solana.token.transferFees.maxFeetHint"
-          values={{
-            maxFee: transferFees.maxTransferFee,
-            unit: tokenAccount.token.units[0].code,
+            maxFee: formatCurrencyUnit(
+              tokenAccount.token.units[0],
+              new BigNumber(transferFees.maxTransferFee),
+              {
+                disableRounding: true,
+                alwaysShowSign: false,
+                showCode: true,
+              },
+            ),
           }}
         />
       </Alert>

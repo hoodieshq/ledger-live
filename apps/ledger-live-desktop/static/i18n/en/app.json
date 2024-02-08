@@ -3679,12 +3679,11 @@
     "token": {
       "frozenStateWarning": "Account assets are frozen!",
       "transferFees": {
-        "feesPercentHint": "Token has {{feePercent}}% transfer fee.",
-        "maxFeetHint": "Max transfer fee {{maxFee}} {{unit}}.",
-        "amountExcludingFeesHint": "Recipient will receive {{amountExcludingFees}} {{unit}}.",
-        "includeFeesSwitch": "Include fees",
+        "feesPercentHint": "Token has {{feePercent}}% ({{feeBps}}bps) transfer fee. {{maxFee}} max",
         "notice": "Transfer fee {{fee}}%",
-        "tooltipHint": "Percentage of transfer withheld for token creator"
+        "tooltipHint": "Percentage of transfer withheld for token creator",
+        "feeWithholdingAddressLabel": "Fee withholding address",
+        "transferFeesLabel": "Transfer fees"
       },
       "nonTransferable": {
         "notice": "Token is non-transferable"

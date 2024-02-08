@@ -44,6 +44,7 @@ export default {
 import { ExtraDeviceTransactionField as ExtraDeviceTransactionField_casper } from "../families/casper/deviceTransactionConfig";
 import { ExtraDeviceTransactionField as ExtraDeviceTransactionField_cosmos } from "../families/cosmos/deviceTransactionConfig";
 import { ExtraDeviceTransactionField as ExtraDeviceTransactionField_filecoin } from "../families/filecoin/deviceTransactionConfig";
+import { ExtraDeviceTransactionField as ExtraDeviceTransactionField_solana } from "../families/solana/deviceTransactionConfig";
 import { ExtraDeviceTransactionField as ExtraDeviceTransactionField_stacks } from "../families/stacks/deviceTransactionConfig";
 import { ExtraDeviceTransactionField as ExtraDeviceTransactionField_stellar } from "../families/stellar/deviceTransactionConfig";
 import { ExtraDeviceTransactionField as ExtraDeviceTransactionField_tezos } from "../families/tezos/deviceTransactionConfig";
@@ -54,6 +55,7 @@ export type ExtraDeviceTransactionField =
   | ExtraDeviceTransactionField_casper
   | ExtraDeviceTransactionField_cosmos
   | ExtraDeviceTransactionField_filecoin
+  | ExtraDeviceTransactionField_solana
   | ExtraDeviceTransactionField_stacks
   | ExtraDeviceTransactionField_stellar
   | ExtraDeviceTransactionField_tezos

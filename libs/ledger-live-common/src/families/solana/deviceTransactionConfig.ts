@@ -18,6 +18,12 @@ import { assertUnreachable } from "./utils";
 
 // do not show fields like 'To', 'Recipient', etc., as per Ledger policy
 
+export type ExtraDeviceTransactionField = {
+  type: "solana.token.transferFee";
+  label: string;
+};
+export type SolanaExtraDeviceFields = ExtraDeviceTransactionField["type"];
+
 function getDeviceTransactionConfig({
   account,
   transaction,
@@ -102,6 +108,13 @@ function fieldsForTokenTransfer(command: TokenTransferCommand): DeviceTransactio
     type: "amount",
     label: "Transfer tokens",
   });
+
+  if (command.extensions?.transferFee) {
+    fields.push({
+      type: "solana.token.transferFee",
+      label: "Transfer fee",
+    });
+  }
 
   fields.push({
     type: "address",

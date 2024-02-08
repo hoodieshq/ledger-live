@@ -5,8 +5,10 @@ import sendRecipientFields from "./SendRecipientFields";
 import AccountBalanceSummaryFooter from "./AccountBalanceSummaryFooter";
 import StakeBanner from "./StakeBanner";
 import sendAmountFields from "./SendAmountFields";
+import StepSummaryAdditionalRows from "./StepSummaryAdditionalRows";
 import { SolanaFamily } from "./types";
 import operationDetails from "./operationDetails";
+import transactionConfirmFields from "./transactionConfirmFields";
 
 const family: SolanaFamily = {
   accountHeaderManageActions,
@@ -14,9 +16,11 @@ const family: SolanaFamily = {
   AccountSubHeader,
   sendRecipientFields,
   AccountBalanceSummaryFooter,
+  StepSummaryAdditionalRows,
   StakeBanner,
   operationDetails,
   sendAmountFields,
+  transactionConfirmFields,
 };
 
 export default family;
