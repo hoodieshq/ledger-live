@@ -162,20 +162,26 @@ export function calculateToken2022TransferFees({
 
   const { maximumFee, transferFeeBasisPoints } = transferFeeConfig;
   const feePercent = BigNumber(transferFeeBasisPoints).div(100);
-  const estimatedTransferFee = feePercent.div(100).multipliedBy(transferAmount).toNumber();
-  const transferFee = estimatedTransferFee > maximumFee ? maximumFee : estimatedTransferFee;
+  let transferAmountIncludingFee = BigNumber(transferAmount)
+    .div(BigNumber(1).minus(feePercent.div(100)))
+    .decimalPlaces(0, BigNumber.ROUND_UP)
+    .toNumber();
+  let transferFee = transferAmountIncludingFee - transferAmount;
+
+  if (transferFee > maximumFee) {
+    transferFee = maximumFee;
+    transferAmountIncludingFee = transferAmount + maximumFee;
+  }
 
   return {
     feePercent: feePercent.toNumber(),
     maxTransferFee: maximumFee,
     transferFee,
-    transferAmountIncludingFee: BigNumber(transferAmount)
-      .div(BigNumber(1).minus(feePercent.div(100)))
-      .decimalPlaces(0, BigNumber.ROUND_UP)
-      .toNumber(),
+    feeBps: transferFeeBasisPoints,
+    transferAmountIncludingFee,
     transferAmountExcludingFee: BigNumber(transferAmount)
       .minus(transferFee)
-      .decimalPlaces(0, BigNumber.ROUND_DOWN)
+      .decimalPlaces(0, BigNumber.ROUND_UP)
       .toNumber(),
   };
 }

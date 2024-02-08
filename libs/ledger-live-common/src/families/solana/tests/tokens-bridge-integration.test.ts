@@ -329,21 +329,13 @@ describe("Solana tokens bridge integration tests", () => {
   });
 
   test("token2022.transfer :: ATA with required memo :: status is error", async () => {
-    const ataWithRequiredMemoMock = {
-      ...baseAta2022Mock,
-      parsed: {
-        ...baseAta2022Mock.parsed,
-        info: {
-          ...baseAta2022Mock.parsed.info,
-          extensions: [
-            {
-              extension: "memoTransfer",
-              state: { requireIncomingTransferMemos: true },
-            },
-          ],
-        },
+    const ataWithRequiredMemoMock = cloneDeep(baseAta2022Mock);
+    (ataWithRequiredMemoMock.parsed.info as any).extensions = [
+      {
+        extension: "memoTransfer",
+        state: { requireIncomingTransferMemos: true },
       },
-    };
+    ];
     const api = {
       ...baseAPI,
       getAccountInfo: (address: string) => {
@@ -422,26 +414,10 @@ describe("Solana tokens bridge integration tests", () => {
     const tx: Transaction = {
       ...baseTx,
       amount: BigNumber(1).times(magnitude),
-      model: {
-        ...baseTxModel,
-        uiState: {
-          ...baseTxModel.uiState,
-          includeTransferFees: true,
-        },
-      },
     };
 
     const preparedTx = await prepareTransaction(account, tx, api);
     const receivedTxStatus = await getTransactionStatus(account, preparedTx);
-
-    const expectedTxStatus: TransactionStatus = {
-      amount: tx.amount,
-      estimatedFees: new BigNumber(testData.fees),
-      totalSpent: tx.amount,
-      errors: {},
-      warnings: {},
-    };
-    expect(receivedTxStatus).toEqual(expectedTxStatus);
 
     const expectedExtensions = {
       transferFee: calculateToken2022TransferFees({
@@ -450,10 +426,110 @@ describe("Solana tokens bridge integration tests", () => {
         transferFeeConfigState: transferConfigExt.state,
       }),
     };
+    const expectedTxStatus: TransactionStatus = {
+      amount: tx.amount,
+      estimatedFees: new BigNumber(testData.fees),
+      totalSpent: new BigNumber(expectedExtensions.transferFee.transferAmountIncludingFee),
+      errors: {},
+      warnings: {},
+    };
 
+    expect(receivedTxStatus).toEqual(expectedTxStatus);
     expect(
       (preparedTx.model.commandDescriptor?.command as TokenTransferCommand).extensions,
     ).toEqual(expectedExtensions);
+  });
+
+  test("token2022.transfer :: transfer fee with useAllAmount", async () => {
+    const mintWithTransferFeeMock = cloneDeep(baseToken2022MintMock);
+    mintWithTransferFeeMock.data.program = "spl-token-2022";
+
+    const magnitude = BigNumber(10).pow(baseTokenMintMock.data.parsed.info.decimals);
+    const maxFee = BigNumber(10).times(magnitude).toNumber();
+    const bps = 100;
+    const transferConfigExt: TransferFeeConfigExt = {
+      extension: "transferFeeConfig",
+      state: {
+        newerTransferFee: {
+          epoch: 300,
+          maximumFee: maxFee,
+          transferFeeBasisPoints: bps,
+        },
+        olderTransferFee: {
+          epoch: 300,
+          maximumFee: maxFee,
+          transferFeeBasisPoints: bps,
+        },
+        transferFeeConfigAuthority: null,
+        withdrawWithheldAuthority: null,
+        withheldAmount: 0,
+      },
+    };
+    mintWithTransferFeeMock.data.parsed.info.extensions = [transferConfigExt];
+    const balance = BigNumber(100).times(magnitude);
+    const api = {
+      ...baseAPI,
+      getAccountInfo: (address: string) => {
+        if (address === wSolToken.contractAddress) {
+          return Promise.resolve(mintWithTransferFeeMock as any);
+        }
+        return Promise.resolve({ data: baseAta2022Mock });
+      },
+      getBalance: () => Promise.resolve(balance.toNumber()),
+      getEpochInfo: () => Promise.resolve({ epoch: 300 } as any),
+    } as ChainAPI;
+
+    const account: SolanaAccount = {
+      ...baseSolanaAccount,
+      subAccounts: [
+        {
+          ...mockedToken2022Acc,
+          balance: balance,
+          spendableBalance: balance,
+          extensions: {
+            transferFee: { feeBps: bps },
+          },
+        } as SolanaTokenAccount,
+      ],
+    };
+
+    const tx: Transaction = {
+      ...baseTx,
+      useAllAmount: true,
+      amount: BigNumber(0),
+    };
+
+    const preparedTx = await prepareTransaction(account, tx, api);
+    const receivedTxStatus = await getTransactionStatus(account, preparedTx);
+
+    const maxSpendable = calculateToken2022TransferFees({
+      transferAmount: balance.toNumber(),
+      currentEpoch: 300,
+      transferFeeConfigState: transferConfigExt.state,
+    }).transferAmountExcludingFee;
+
+    const transferFeeConfig = calculateToken2022TransferFees({
+      transferAmount: maxSpendable,
+      currentEpoch: 300,
+      transferFeeConfigState: transferConfigExt.state,
+    });
+    console.warn(transferFeeConfig);
+
+    const expectedTxStatus: TransactionStatus = {
+      amount: new BigNumber(maxSpendable),
+      estimatedFees: new BigNumber(testData.fees),
+      totalSpent: new BigNumber(transferFeeConfig.transferAmountIncludingFee),
+      errors: {},
+      warnings: {},
+    };
+
+    expect((preparedTx.model.commandDescriptor?.command as TokenTransferCommand).amount).toBe(
+      maxSpendable,
+    );
+    expect(
+      (preparedTx.model.commandDescriptor?.command as TokenTransferCommand).extensions?.transferFee,
+    ).toEqual(transferFeeConfig);
+    expect(receivedTxStatus).toEqual(expectedTxStatus);
   });
 
   test("token2022.transfer :: NonTransferable token :: tx returns SolanaTokenNonTransferable error", async () => {

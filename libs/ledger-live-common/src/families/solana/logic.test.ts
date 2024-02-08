@@ -37,12 +37,12 @@ describe("solana/logic", () => {
 
     test("Should calculate transferFee: [amount: 1, fee: 10bps, maxFee: 10]", async () => {
       const magnitude = 3;
-      const bps = 10;
+      const feeBps = 10;
       const maxFee = BigNumber(10).multipliedBy(BigNumber(10).pow(magnitude)).toNumber();
       const amount = BigNumber(1).multipliedBy(BigNumber(10).pow(magnitude)).toNumber();
 
       const transferFeeConfig = mockTransferFeeConfig({
-        bps,
+        bps: feeBps,
         maxFee,
         olderEpoch,
         newerEpoch,
@@ -53,24 +53,25 @@ describe("solana/logic", () => {
         currentEpoch: newerEpoch,
         transferFeeConfigState: transferFeeConfig,
       });
-
+      const expectedFee = 2;
       expect(transferFees).toEqual({
         maxTransferFee: 10_000,
-        transferFee: 1,
+        transferFee: expectedFee,
+        feeBps,
         feePercent: 0.1,
-        transferAmountExcludingFee: 999,
-        transferAmountIncludingFee: 1002,
+        transferAmountExcludingFee: amount - expectedFee,
+        transferAmountIncludingFee: amount + expectedFee,
       });
     });
 
     test("Should calculate transferFee: [amount: 25, fee: 500bps, maxFee: 10]", async () => {
       const magnitude = 3;
-      const bps = 500;
+      const feeBps = 500;
       const maxFee = BigNumber(5).multipliedBy(BigNumber(10).pow(magnitude)).toNumber();
       const amount = BigNumber(25).multipliedBy(BigNumber(10).pow(magnitude)).toNumber();
 
       const transferFeeConfig = mockTransferFeeConfig({
-        bps,
+        bps: feeBps,
         maxFee,
         olderEpoch,
         newerEpoch,
@@ -82,23 +83,25 @@ describe("solana/logic", () => {
         transferFeeConfigState: transferFeeConfig,
       });
 
+      const expectedFee = 1316;
       expect(transferFees).toEqual({
         maxTransferFee: 5_000,
-        transferFee: 1250,
+        transferFee: expectedFee,
+        feeBps,
         feePercent: 5,
-        transferAmountExcludingFee: 23_750,
-        transferAmountIncludingFee: 26_316,
+        transferAmountExcludingFee: amount - expectedFee,
+        transferAmountIncludingFee: amount + expectedFee,
       });
     });
 
     test("transferFee should be equal maxTransferFee: [amount: 1000, fee: 100bps, maxFee: 1000]", async () => {
       const magnitude = 3;
-      const bps = 100;
+      const feeBps = 100;
       const maxFee = BigNumber(1).multipliedBy(BigNumber(10).pow(magnitude)).toNumber();
       const amount = BigNumber(10000).multipliedBy(BigNumber(10).pow(magnitude)).toNumber();
 
       const transferFeeConfig = mockTransferFeeConfig({
-        bps,
+        bps: feeBps,
         maxFee,
         olderEpoch,
         newerEpoch,
@@ -110,12 +113,14 @@ describe("solana/logic", () => {
         transferFeeConfigState: transferFeeConfig,
       });
 
+      const expectedFee = 1000; // max fee;
       expect(transferFees).toEqual({
-        maxTransferFee: 1000,
-        transferFee: 1000,
+        maxTransferFee: expectedFee,
+        transferFee: expectedFee,
+        feeBps,
         feePercent: 1,
-        transferAmountExcludingFee: 9_999_000,
-        transferAmountIncludingFee: 10_101_011,
+        transferAmountExcludingFee: amount - expectedFee,
+        transferAmountIncludingFee: amount + expectedFee,
       });
     });
   });

@@ -56,8 +56,14 @@ function getTotalSpent({ command, fee }: CommandDescriptor) {
     case "transfer":
     case "stake.createAccount":
       return command.amount < 0 ? 0 : command.amount + fee;
-    case "token.transfer":
+    case "token.transfer": {
+      const transferFee = command.extensions?.transferFee;
+      if (transferFee) {
+        return transferFee.transferAmountIncludingFee;
+      }
+
       return Math.max(command.amount, 0);
+    }
     case "token.createATA":
     case "stake.delegate":
     case "stake.undelegate":

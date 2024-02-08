@@ -80,6 +80,7 @@ export type TransferFeeCalculated = {
   maxTransferFee: number;
   transferFee: number;
   feePercent: number;
+  feeBps: number;
   transferAmountIncludingFee: number;
   transferAmountExcludingFee: number;
 };
@@ -128,7 +129,6 @@ export type TokenTransferTransaction = {
   uiState: {
     subAccountId: string;
     memo?: string;
-    includeTransferFees?: boolean;
   };
 };
 

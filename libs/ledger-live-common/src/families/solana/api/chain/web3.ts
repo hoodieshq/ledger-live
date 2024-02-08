@@ -178,6 +178,7 @@ export const buildTokenTransferInstructions = async (
     mintDecimals,
     memo,
     tokenProgram,
+    extensions,
   } = command;
   const ownerPubkey = new PublicKey(ownerAddress);
 
@@ -203,6 +204,8 @@ export const buildTokenTransferInstructions = async (
     );
   }
 
+  const amountWithFee = extensions?.transferFee?.transferAmountIncludingFee;
+
   const transferIx =
     tokenProgram === "spl-token-2022"
       ? await createTransferCheckedWithTransferHookInstruction(
@@ -211,7 +214,7 @@ export const buildTokenTransferInstructions = async (
           mintPubkey,
           destinationPubkey,
           ownerPubkey,
-          BigInt(amount),
+          BigInt(amountWithFee || amount),
           mintDecimals,
           undefined,
           "confirmed",
