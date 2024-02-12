@@ -109,7 +109,7 @@ function fieldsForTokenTransfer(command: TokenTransferCommand): DeviceTransactio
     label: "Transfer tokens",
   });
 
-  if (command.extensions?.transferFee) {
+  if (command.extensions?.transferFee && command.extensions.transferFee.feeBps > 0) {
     fields.push({
       type: "solana.token.transferFee",
       label: "Transfer fee",

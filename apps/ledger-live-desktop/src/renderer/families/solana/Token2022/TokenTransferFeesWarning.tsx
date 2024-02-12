@@ -20,7 +20,7 @@ export default function TokenTransferFeesWarning({ transaction, tokenAccount }: 
       ? transaction.model.commandDescriptor.command.extensions?.transferFee
       : undefined;
 
-  if (!transferFees) return null;
+  if (!transferFees || transferFees.feeBps === 0) return null;
 
   return (
     <div>

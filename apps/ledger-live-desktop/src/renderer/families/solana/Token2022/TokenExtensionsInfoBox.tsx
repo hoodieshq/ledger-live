@@ -1,13 +1,13 @@
 import React from "react";
 import { Trans } from "react-i18next";
 import { SpaceProps } from "styled-system";
-import BigNumber from "bignumber.js";
 
 import { SolanaTokenAccountExtensions } from "@ledgerhq/live-common/families/solana/types";
 import Box from "~/renderer/components/Box";
 import Alert from "~/renderer/components/Alert";
 import Text from "~/renderer/components/Text";
 import LabelInfoTooltip from "~/renderer/components/LabelInfoTooltip";
+import { bpsToPercent } from "@ledgerhq/live-common/families/solana/logic";
 
 type Props = SpaceProps & {
   extensions: SolanaTokenAccountExtensions;
@@ -25,7 +25,7 @@ export default function TokenExtensionsInfoBox({ extensions, ...boxProps }: Prop
             <Text>
               <Trans
                 i18nKey="solana.token.interestRate.notice"
-                values={{ rate: BigNumber(extensions.interestRate.rateBps).div(100).toNumber() }}
+                values={{ rate: bpsToPercent(extensions.interestRate.rateBps) }}
               />
             </Text>
           )}
@@ -37,14 +37,20 @@ export default function TokenExtensionsInfoBox({ extensions, ...boxProps }: Prop
           {!!extensions.permanentDelegate && (
             <LabelInfoTooltip
               text={
-                <Trans
-                  i18nKey="solana.token.permanentDelegate.tooltipHint"
-                  values={{ delegateAddress: extensions.permanentDelegate.delegateAddress }}
-                />
+                extensions.permanentDelegate.delegateAddress && (
+                  <Trans
+                    i18nKey="solana.token.permanentDelegate.tooltipHint"
+                    values={{ delegateAddress: extensions.permanentDelegate.delegateAddress }}
+                  />
+                )
               }
             >
               <Text>
-                <Trans i18nKey="solana.token.permanentDelegate.notice" />
+                {extensions.permanentDelegate.delegateAddress ? (
+                  <Trans i18nKey="solana.token.permanentDelegate.notice" />
+                ) : (
+                  <Trans i18nKey="solana.token.permanentDelegate.initializationNotice" />
+                )}
               </Text>
             </LabelInfoTooltip>
           )}
@@ -53,7 +59,7 @@ export default function TokenExtensionsInfoBox({ extensions, ...boxProps }: Prop
               <Text>
                 <Trans
                   i18nKey="solana.token.transferFees.notice"
-                  values={{ fee: BigNumber(extensions.transferFee.feeBps).div(100).toNumber() }}
+                  values={{ fee: bpsToPercent(extensions.transferFee.feeBps) }}
                 />
               </Text>
             </LabelInfoTooltip>
@@ -70,14 +76,20 @@ export default function TokenExtensionsInfoBox({ extensions, ...boxProps }: Prop
           {!!extensions.transferHook && (
             <LabelInfoTooltip
               text={
-                <Trans
-                  i18nKey="solana.token.transferHook.tooltipHint"
-                  values={{ programAddress: extensions.transferHook.programAddress }}
-                />
+                extensions.transferHook.programAddress && (
+                  <Trans
+                    i18nKey="solana.token.transferHook.tooltipHint"
+                    values={{ programAddress: extensions.transferHook.programAddress }}
+                  />
+                )
               }
             >
               <Text>
-                <Trans i18nKey="solana.token.transferHook.notice" />
+                {extensions.transferHook.programAddress ? (
+                  <Trans i18nKey="solana.token.transferHook.notice" />
+                ) : (
+                  <Trans i18nKey="solana.token.transferHook.initializationNotice" />
+                )}
               </Text>
             </LabelInfoTooltip>
           )}

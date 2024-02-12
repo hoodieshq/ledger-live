@@ -369,28 +369,28 @@ function toSolanaTokenAccExtensions(
         case "nonTransferable":
           return { ...acc, nonTransferable: true };
         case "permanentDelegate":
-          if (!tokenExt.state.delegate) return acc;
           return {
             ...acc,
-            permanentDelegate: { delegateAddress: tokenExt.state.delegate.toBase58() },
+            permanentDelegate: { delegateAddress: tokenExt.state?.delegate?.toBase58() },
           };
         case "memoTransfer":
           return { ...acc, requiredMemoOnTransfer: !!tokenExt.state.requireIncomingTransferMemos };
         case "transferFeeConfig": {
           const { newerTransferFee, olderTransferFee } = tokenExt.state;
+          const transferFee = epoch >= newerTransferFee.epoch ? newerTransferFee : olderTransferFee;
           return {
             ...acc,
             transferFee: {
-              feeBps:
-                epoch >= newerTransferFee.epoch
-                  ? newerTransferFee.transferFeeBasisPoints
-                  : olderTransferFee.transferFeeBasisPoints,
+              feeBps: transferFee.transferFeeBasisPoints,
+              maxFee: transferFee.maximumFee,
             },
           };
         }
         case "transferHook": {
-          if (!tokenExt.state.programId) return acc;
-          return { ...acc, transferHook: { programAddress: tokenExt.state.programId.toBase58() } };
+          return {
+            ...acc,
+            transferHook: { programAddress: tokenExt.state?.programId?.toBase58() },
+          };
         }
         default:
           return acc;

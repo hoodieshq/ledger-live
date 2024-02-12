@@ -59,7 +59,11 @@ export async function extimateTokenMaxSpendable(
   account: SolanaTokenAccount,
   tx?: Transaction | undefined | null,
 ) {
-  if (isTransferTx(tx) && account.extensions?.transferFee) {
+  if (
+    isTransferTx(tx) &&
+    account.extensions?.transferFee &&
+    account.extensions.transferFee.feeBps > 0
+  ) {
     const mint = await getMaybeTokenMint(account.token.contractAddress, api);
     if (!mint || mint instanceof Error) return account.spendableBalance;
     const transferFeeConfig = mint.info.extensions?.find(

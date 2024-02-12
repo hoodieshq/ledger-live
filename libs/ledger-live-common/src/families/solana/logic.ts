@@ -143,6 +143,10 @@ export function isTokenProgram(program: string): boolean {
   return program === "spl-token" || program === "spl-token-2022";
 }
 
+export function bpsToPercent(bps: number): number {
+  return BigNumber(bps).div(100).toNumber();
+}
+
 // https://spl.solana.com/token-2022/extensions#transfer-fees
 export function calculateToken2022TransferFees({
   transferAmount,
@@ -161,7 +165,7 @@ export function calculateToken2022TransferFees({
     currentEpoch >= newerTransferFee.epoch ? newerTransferFee : olderTransferFee;
 
   const { maximumFee, transferFeeBasisPoints } = transferFeeConfig;
-  const feePercent = BigNumber(transferFeeBasisPoints).div(100);
+  const feePercent = BigNumber(bpsToPercent(transferFeeBasisPoints));
   let transferAmountIncludingFee = BigNumber(transferAmount)
     .div(BigNumber(1).minus(feePercent.div(100)))
     .decimalPlaces(0, BigNumber.ROUND_UP)

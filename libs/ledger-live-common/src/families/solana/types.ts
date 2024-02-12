@@ -275,7 +275,7 @@ export type SolanaAccountRaw = AccountRaw & {
 type Base58PubKey = string;
 export type SolanaTokenAccountExtensions = {
   permanentDelegate?: {
-    delegateAddress: Base58PubKey;
+    delegateAddress: Base58PubKey | undefined;
   };
   nonTransferable?: boolean;
   interestRate?: {
@@ -283,6 +283,7 @@ export type SolanaTokenAccountExtensions = {
   };
   transferFee?: {
     feeBps: number;
+    maxFee: number;
   };
   requiredMemoOnTransfer?: boolean;
   transferHook?: {

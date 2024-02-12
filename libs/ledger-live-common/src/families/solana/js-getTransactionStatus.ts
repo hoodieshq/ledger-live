@@ -58,7 +58,7 @@ function getTotalSpent({ command, fee }: CommandDescriptor) {
       return command.amount < 0 ? 0 : command.amount + fee;
     case "token.transfer": {
       const transferFee = command.extensions?.transferFee;
-      if (transferFee) {
+      if (transferFee && transferFee.feeBps > 0) {
         return transferFee.transferAmountIncludingFee;
       }
 

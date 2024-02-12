@@ -3693,6 +3693,7 @@
       },
       "permanentDelegate": {
         "notice": "Permanent delegate authority is enabled",
+        "initializationNotice": "Permanent delegate authority is initialized but not enabled",
         "tooltipHint": "{{delegateAddress}} has the ability transfer or burn this token from your account"
       },
       "requiredMemoOnTransfer": {
@@ -3701,6 +3702,7 @@
       },
       "transferHook": {
         "notice": "Transfer hook is enabled",
+        "initializationNotice": "Transfer hook is initialized but not enabled",
         "tooltipHint": "Token has extra functionality handled by {{programAddress}} program"
       }
     }

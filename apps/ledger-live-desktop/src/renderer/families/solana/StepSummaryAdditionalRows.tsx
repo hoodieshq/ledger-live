@@ -5,6 +5,7 @@ import {
   Transaction,
   SolanaAccount,
   SolanaTokenAccount,
+  TransferFeeCalculated,
 } from "@ledgerhq/live-common/families/solana/types";
 import { SubAccount } from "@ledgerhq/types-live";
 import { findSubAccountById, getMainAccount } from "@ledgerhq/live-common/account/index";
@@ -25,7 +26,7 @@ type Props = {
 
 const StepSummaryAdditionalRows = ({ account, parentAccount, transaction }: Props) => {
   const mainAccount = getMainAccount(account, parentAccount);
-  const tokenAcc = transaction.subAccountId
+  const tokenAccount = transaction.subAccountId
     ? (findSubAccountById(mainAccount, transaction.subAccountId) as SolanaTokenAccount)
     : undefined;
 
@@ -34,11 +35,29 @@ const StepSummaryAdditionalRows = ({ account, parentAccount, transaction }: Prop
       ? transaction.model.commandDescriptor.command.extensions?.transferFee
       : undefined;
 
-  if (!transferFees || !tokenAcc) return null;
+  return (
+    <>
+      {!!(transferFees && transferFees.feeBps > 0 && tokenAccount) && (
+        <TransferFeeAdditionalRows
+          transferFees={transferFees}
+          tokenAccount={tokenAccount}
+          transaction={transaction}
+        />
+      )}
+    </>
+  );
+};
 
-  const unit = getAccountUnit(tokenAcc);
-  console.log(transaction);
-
+function TransferFeeAdditionalRows({
+  transferFees,
+  tokenAccount,
+  transaction,
+}: {
+  transferFees: TransferFeeCalculated;
+  tokenAccount: SolanaTokenAccount;
+  transaction: Transaction;
+}) {
+  const unit = getAccountUnit(tokenAccount);
   return (
     <>
       <Box horizontal justifyContent="space-between" alignItems="center" mt={10} mb={20}>
@@ -60,7 +79,7 @@ const StepSummaryAdditionalRows = ({ account, parentAccount, transaction }: Prop
             <CounterValue
               color="palette.text.shade60"
               fontSize={3}
-              currency={tokenAcc.token}
+              currency={tokenAccount.token}
               value={BigNumber(transferFees.transferFee)}
               alwaysShowSign={false}
               alwaysShowValue
@@ -82,6 +101,6 @@ const StepSummaryAdditionalRows = ({ account, parentAccount, transaction }: Prop
       </Box>
     </>
   );
-};
+}
 
 export default StepSummaryAdditionalRows;
