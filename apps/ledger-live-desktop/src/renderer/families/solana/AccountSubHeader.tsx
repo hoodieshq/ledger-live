@@ -28,7 +28,13 @@ export default function SolanaAccountSubHeader({ account }: Props) {
           </Alert>
         </Box>
       )}
-      {!!tokenExtensions && <TokenExtensionsInfoBox mb={3} extensions={tokenExtensions} />}
+      {!!tokenExtensions && (
+        <TokenExtensionsInfoBox
+          mb={3}
+          tokenAccount={account as SolanaTokenAccount}
+          extensions={tokenExtensions}
+        />
+      )}
     </>
   );
 }
