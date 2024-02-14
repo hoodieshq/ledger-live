@@ -28,7 +28,12 @@ function SolanaAccountSubHeader({ account }: Props) {
           </Alert>
         </Box>
       )}
-      {!!tokenExtensions && <TokenExtensionsInfoBox extensions={tokenExtensions} />}
+      {!!tokenExtensions && (
+        <TokenExtensionsInfoBox
+          tokenAccount={account as SolanaTokenAccount}
+          extensions={tokenExtensions}
+        />
+      )}
     </>
   );
 }

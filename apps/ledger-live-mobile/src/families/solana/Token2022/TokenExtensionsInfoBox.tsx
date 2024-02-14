@@ -2,63 +2,133 @@ import React from "react";
 import { View } from "react-native";
 import BigNumber from "bignumber.js";
 import { Trans } from "react-i18next";
-import { Flex, Text, Alert } from "@ledgerhq/native-ui";
-import { SolanaTokenAccountExtensions } from "@ledgerhq/live-common/families/solana/types";
+import { Flex, Text, Alert, Link, Box } from "@ledgerhq/native-ui";
+import {
+  SolanaTokenAccount,
+  SolanaTokenAccountExtensions,
+} from "@ledgerhq/live-common/families/solana/types";
+import { bpsToPercent } from "@ledgerhq/live-common/families/solana/logic";
 import TooltipLabel from "~/components/TooltipLabel";
+import TokenExtensionsInfoDrawer from "./TokenExtensionsInfoDrawer";
+import { InfoMedium } from "@ledgerhq/native-ui/assets/icons";
+import CopyButton from "../shared/CopyButton";
 
 export default function TokenExtensionsInfoBox({
+  tokenAccount,
   extensions,
 }: {
+  tokenAccount: SolanaTokenAccount;
   extensions: SolanaTokenAccountExtensions;
 }) {
+  const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
+
   const extensionsSize = Object.values(extensions);
   if (!extensionsSize.length) return null;
+
+  function openDrawer() {
+    setIsDrawerOpen(true);
+  }
+
+  function closeDrawer() {
+    setIsDrawerOpen(false);
+  }
 
   return (
     <View>
       <Alert showIcon={extensionsSize.length === 1} type="info">
         <Flex flexDirection="column" columnGap={4} alignItems="flex-start">
-          {!!extensions.interestRate && (
-            <Text>
-              <Trans
-                i18nKey="solana.token.interestRate.notice"
-                values={{ rate: BigNumber(extensions.interestRate.rateBps).div(100).toNumber() }}
-              />
-            </Text>
-          )}
           {!!extensions.nonTransferable && (
             <Text>
               <Trans i18nKey="solana.token.nonTransferable.notice" />
             </Text>
           )}
-          {!!extensions.permanentDelegate && (
+
+          {!!extensions.interestRate && (
             <TooltipLabel
               label={
                 <Text>
-                  <Trans i18nKey="solana.token.permanentDelegate.notice" />
+                  <Trans
+                    i18nKey="solana.token.interestRate.notice"
+                    values={{
+                      rate: BigNumber(extensions.interestRate.rateBps).div(100).toNumber(),
+                    }}
+                  />
                 </Text>
               }
-              tooltip={
-                <Trans
-                  i18nKey="solana.token.permanentDelegate.tooltipHint"
-                  values={{ delegateAddress: extensions.permanentDelegate.delegateAddress }}
-                />
-              }
+              tooltip={<Trans i18nKey="solana.token.interestRate.tooltipHint" />}
             />
           )}
+
+          {extensions.permanentDelegate ? (
+            extensions.permanentDelegate.delegateAddress ? (
+              <TooltipLabel
+                label={
+                  <Text>
+                    <Trans i18nKey="solana.token.permanentDelegate.notice" />
+                  </Text>
+                }
+                tooltip={
+                  <Trans
+                    i18nKey="solana.token.permanentDelegate.tooltipHint"
+                    values={{ delegateAddress: extensions.permanentDelegate.delegateAddress }}
+                    components={[
+                      <CopyButton
+                        key="SolanaCopyDelegateAddress"
+                        copyString={extensions.permanentDelegate.delegateAddress}
+                      />,
+                    ]}
+                  />
+                }
+              />
+            ) : (
+              <Text>
+                <Trans i18nKey="solana.token.permanentDelegate.initializationNotice" />
+              </Text>
+            )
+          ) : null}
+
           {!!extensions.transferFee && (
             <TooltipLabel
               label={
                 <Text>
                   <Trans
                     i18nKey="solana.token.transferFees.notice"
-                    values={{ fee: BigNumber(extensions.transferFee.feeBps).div(100).toNumber() }}
+                    values={{ fee: bpsToPercent(extensions.transferFee.feeBps) }}
                   />
                 </Text>
               }
               tooltip={<Trans i18nKey="solana.token.transferFees.tooltipHint" />}
             />
           )}
+
+          {extensions.transferHook ? (
+            extensions.transferHook.programAddress ? (
+              <TooltipLabel
+                label={
+                  <Text>
+                    <Trans i18nKey="solana.token.transferHook.notice" />
+                  </Text>
+                }
+                tooltip={
+                  <Trans
+                    i18nKey="solana.token.transferHook.tooltipHint"
+                    values={{ programAddress: extensions.transferHook.programAddress }}
+                    components={[
+                      <CopyButton
+                        key="SolanaCopyHookAddress"
+                        copyString={extensions.transferHook.programAddress}
+                      />,
+                    ]}
+                  />
+                }
+              />
+            ) : (
+              <Text>
+                <Trans i18nKey="solana.token.transferHook.initializationNotice" />
+              </Text>
+            )
+          ) : null}
+
           {!!extensions.requiredMemoOnTransfer && (
             <TooltipLabel
               label={
@@ -69,23 +139,19 @@ export default function TokenExtensionsInfoBox({
               tooltip={<Trans i18nKey="solana.token.requiredMemoOnTransfer.tooltipHint" />}
             />
           )}
-          {!!extensions.transferHook && (
-            <TooltipLabel
-              label={
-                <Text>
-                  <Trans i18nKey="solana.token.transferHook.notice" />
-                </Text>
-              }
-              tooltip={
-                <Trans
-                  i18nKey="solana.token.transferHook.tooltipHint"
-                  values={{ programAddress: extensions.transferHook.programAddress }}
-                />
-              }
-            />
-          )}
+          <Box mt={4}>
+            <Link type="color" size="medium" Icon={InfoMedium} onPress={openDrawer}>
+              <Trans i18nKey="common.moreInfo" />
+            </Link>
+          </Box>
         </Flex>
       </Alert>
+      <TokenExtensionsInfoDrawer
+        extensions={extensions}
+        tokenAccount={tokenAccount}
+        isOpen={isDrawerOpen}
+        closeDrawer={closeDrawer}
+      />
     </View>
   );
 }
