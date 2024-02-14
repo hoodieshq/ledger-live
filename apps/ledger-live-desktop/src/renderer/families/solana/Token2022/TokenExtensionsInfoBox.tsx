@@ -46,6 +46,12 @@ export default function TokenExtensionsInfoBox({ tokenAccount, extensions, ...bo
         }
       >
         <Box flexDirection="column">
+          {!!extensions.nonTransferable && (
+            <Text>
+              <Trans i18nKey="solana.token.nonTransferable.notice" />
+            </Text>
+          )}
+
           {!!extensions.interestRate && (
             <LabelInfoTooltip text={<Trans i18nKey="solana.token.interestRate.tooltipHint" />}>
               <Text>
@@ -55,12 +61,6 @@ export default function TokenExtensionsInfoBox({ tokenAccount, extensions, ...bo
                 />
               </Text>
             </LabelInfoTooltip>
-          )}
-
-          {!!extensions.nonTransferable && (
-            <Text>
-              <Trans i18nKey="solana.token.nonTransferable.notice" />
-            </Text>
           )}
 
           {extensions.permanentDelegate ? (
@@ -95,16 +95,6 @@ export default function TokenExtensionsInfoBox({ tokenAccount, extensions, ...bo
             </LabelInfoTooltip>
           )}
 
-          {!!extensions.requiredMemoOnTransfer && (
-            <LabelInfoTooltip
-              text={<Trans i18nKey="solana.token.requiredMemoOnTransfer.tooltipHint" />}
-            >
-              <Text>
-                <Trans i18nKey="solana.token.requiredMemoOnTransfer.notice" />
-              </Text>
-            </LabelInfoTooltip>
-          )}
-
           {extensions.transferHook ? (
             extensions.transferHook.programAddress ? (
               <LabelInfoTooltip
@@ -125,6 +115,16 @@ export default function TokenExtensionsInfoBox({ tokenAccount, extensions, ...bo
               </Text>
             )
           ) : null}
+
+          {!!extensions.requiredMemoOnTransfer && (
+            <LabelInfoTooltip
+              text={<Trans i18nKey="solana.token.requiredMemoOnTransfer.tooltipHint" />}
+            >
+              <Text>
+                <Trans i18nKey="solana.token.requiredMemoOnTransfer.notice" />
+              </Text>
+            </LabelInfoTooltip>
+          )}
         </Box>
         <TokenExtensionsInfoDrawer
           extensions={extensions}

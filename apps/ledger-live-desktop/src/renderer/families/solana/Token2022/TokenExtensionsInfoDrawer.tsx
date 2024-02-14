@@ -68,6 +68,29 @@ function TokenExtensionsInfoDrawer({ tokenAccount, extensions, isOpen, closeDraw
       <Box overflow="auto" height="calc(100% - 62px)" px={40}>
         <Paragraph>{t("solana.token.extensionsInfo.commonInfo")}</Paragraph>
 
+        {!!extensions.nonTransferable && (
+          <ExtensionBox title={t("solana.token.extensionsInfo.nonTransferable.title")}>
+            <Paragraph>{t("solana.token.extensionsInfo.nonTransferable.description")}</Paragraph>
+          </ExtensionBox>
+        )}
+
+        {!!extensions.interestRate && (
+          <ExtensionBox title={t("solana.token.extensionsInfo.interestBearing.title")}>
+            <Paragraph>{t("solana.token.extensionsInfo.interestBearing.description")}</Paragraph>
+            {extensions.interestRate.rateBps > 0 ? (
+              <Paragraph>
+                {t("solana.token.extensionsInfo.interestBearing.currentInterestRate", {
+                  rate: bpsToPercent(extensions.interestRate.rateBps),
+                })}
+              </Paragraph>
+            ) : (
+              <Paragraph>
+                {t("solana.token.extensionsInfo.interestBearing.interestRateNotSetup")}
+              </Paragraph>
+            )}
+          </ExtensionBox>
+        )}
+
         {!!extensions.permanentDelegate && (
           <ExtensionBox title={t("solana.token.extensionsInfo.permanentDelegate.title")}>
             <Paragraph>{t("solana.token.extensionsInfo.permanentDelegate.description")}</Paragraph>
@@ -83,32 +106,6 @@ function TokenExtensionsInfoDrawer({ tokenAccount, extensions, isOpen, closeDraw
             ) : (
               <Paragraph>
                 {t("solana.token.extensionsInfo.permanentDelegate.permanentDelegateNotSetup")}
-              </Paragraph>
-            )}
-          </ExtensionBox>
-        )}
-
-        {!!extensions.nonTransferable && (
-          <ExtensionBox title={t("solana.token.extensionsInfo.nonTransferable.title")}>
-            <Paragraph>{t("solana.token.extensionsInfo.nonTransferable.description")}</Paragraph>
-          </ExtensionBox>
-        )}
-
-        {!!extensions.transferHook && (
-          <ExtensionBox title={t("solana.token.extensionsInfo.transferHook.title")}>
-            <Paragraph>{t("solana.token.extensionsInfo.transferHook.description")}</Paragraph>
-            {extensions.transferHook.programAddress ? (
-              <Paragraph style={{ wordBreak: "break-all" }}>
-                {t("solana.token.extensionsInfo.transferHook.transferHookAddress", {
-                  address: extensions.transferHook.programAddress,
-                })}
-                <span style={{ marginLeft: 4, display: "inline-block" }}>
-                  <CopyWithFeedback text={extensions.transferHook.programAddress} />
-                </span>
-              </Paragraph>
-            ) : (
-              <Paragraph>
-                {t("solana.token.extensionsInfo.transferHook.transferHookNotSetup")}
               </Paragraph>
             )}
           </ExtensionBox>
@@ -135,18 +132,21 @@ function TokenExtensionsInfoDrawer({ tokenAccount, extensions, isOpen, closeDraw
           </ExtensionBox>
         )}
 
-        {!!extensions.interestRate && (
-          <ExtensionBox title={t("solana.token.extensionsInfo.interestBearing.title")}>
-            <Paragraph>{t("solana.token.extensionsInfo.interestBearing.description")}</Paragraph>
-            {extensions.interestRate.rateBps > 0 ? (
-              <Paragraph>
-                {t("solana.token.extensionsInfo.interestBearing.currentInterestRate", {
-                  rate: bpsToPercent(extensions.interestRate.rateBps),
+        {!!extensions.transferHook && (
+          <ExtensionBox title={t("solana.token.extensionsInfo.transferHook.title")}>
+            <Paragraph>{t("solana.token.extensionsInfo.transferHook.description")}</Paragraph>
+            {extensions.transferHook.programAddress ? (
+              <Paragraph style={{ wordBreak: "break-all" }}>
+                {t("solana.token.extensionsInfo.transferHook.transferHookAddress", {
+                  address: extensions.transferHook.programAddress,
                 })}
+                <span style={{ marginLeft: 4, display: "inline-block" }}>
+                  <CopyWithFeedback text={extensions.transferHook.programAddress} />
+                </span>
               </Paragraph>
             ) : (
               <Paragraph>
-                {t("solana.token.extensionsInfo.interestBearing.interestRateNotSetup")}
+                {t("solana.token.extensionsInfo.transferHook.transferHookNotSetup")}
               </Paragraph>
             )}
           </ExtensionBox>
