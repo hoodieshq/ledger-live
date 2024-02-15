@@ -11,6 +11,11 @@ import { SideDrawer } from "~/renderer/components/SideDrawer";
 import Box from "~/renderer/components/Box";
 import Text from "~/renderer/components/Text";
 import CopyWithFeedback from "~/renderer/components/CopyWithFeedback";
+import Fees from "~/renderer/icons/Fees";
+import Coins from "~/renderer/icons/Coins";
+import LockCircle from "~/renderer/icons/LockCircle";
+import Transfer from "~/renderer/icons/Transfer";
+import LightBulb from "~/renderer/icons/LightBulb";
 
 type Props = {
   tokenAccount: SolanaTokenAccount;
@@ -19,11 +24,14 @@ type Props = {
   closeDrawer: () => void;
 };
 
-const SectionTitle = ({ children }: { children: React.ReactNode }) => {
+const SectionTitle = ({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) => {
   return (
-    <Text fontSize={16} mb={2}>
-      <strong>{children}</strong>
-    </Text>
+    <Box alignItems="center" horizontal gap="4px" mb={2}>
+      {icon}
+      <Text fontSize={16}>
+        <strong>{children}</strong>
+      </Text>
+    </Box>
   );
 };
 
@@ -42,15 +50,17 @@ const Paragraph = ({
 };
 
 const ExtensionBox = ({
+  icon,
   title,
   children,
 }: {
+  icon: React.ReactNode;
   title: React.ReactNode;
   children: React.ReactNode;
 }) => {
   return (
     <Box py={2}>
-      <SectionTitle>{title}</SectionTitle>
+      <SectionTitle icon={icon}>{title}</SectionTitle>
       {children}
     </Box>
   );
@@ -69,13 +79,19 @@ function TokenExtensionsInfoDrawer({ tokenAccount, extensions, isOpen, closeDraw
         <Paragraph>{t("solana.token.extensionsInfo.commonInfo")}</Paragraph>
 
         {!!extensions.nonTransferable && (
-          <ExtensionBox title={t("solana.token.extensionsInfo.nonTransferable.title")}>
+          <ExtensionBox
+            icon={<LockCircle size={16} />}
+            title={t("solana.token.extensionsInfo.nonTransferable.title")}
+          >
             <Paragraph>{t("solana.token.extensionsInfo.nonTransferable.description")}</Paragraph>
           </ExtensionBox>
         )}
 
         {!!extensions.interestRate && (
-          <ExtensionBox title={t("solana.token.extensionsInfo.interestBearing.title")}>
+          <ExtensionBox
+            icon={<Coins size={16} />}
+            title={t("solana.token.extensionsInfo.interestBearing.title")}
+          >
             <Paragraph>{t("solana.token.extensionsInfo.interestBearing.description")}</Paragraph>
             {extensions.interestRate.rateBps > 0 ? (
               <Paragraph>
@@ -92,7 +108,10 @@ function TokenExtensionsInfoDrawer({ tokenAccount, extensions, isOpen, closeDraw
         )}
 
         {!!extensions.permanentDelegate && (
-          <ExtensionBox title={t("solana.token.extensionsInfo.permanentDelegate.title")}>
+          <ExtensionBox
+            icon={<LightBulb size={16} />}
+            title={t("solana.token.extensionsInfo.permanentDelegate.title")}
+          >
             <Paragraph>{t("solana.token.extensionsInfo.permanentDelegate.description")}</Paragraph>
             {extensions.permanentDelegate.delegateAddress ? (
               <Paragraph style={{ wordBreak: "break-all" }}>
@@ -112,7 +131,10 @@ function TokenExtensionsInfoDrawer({ tokenAccount, extensions, isOpen, closeDraw
         )}
 
         {!!extensions.transferFee && (
-          <ExtensionBox title={t("solana.token.extensionsInfo.transferFee.title")}>
+          <ExtensionBox
+            icon={<Fees size={16} />}
+            title={t("solana.token.extensionsInfo.transferFee.title")}
+          >
             <Paragraph>{t("solana.token.extensionsInfo.transferFee.description")}</Paragraph>
             <Paragraph>
               {t("solana.token.extensionsInfo.transferFee.currentTransferFee", {
@@ -133,7 +155,10 @@ function TokenExtensionsInfoDrawer({ tokenAccount, extensions, isOpen, closeDraw
         )}
 
         {!!extensions.transferHook && (
-          <ExtensionBox title={t("solana.token.extensionsInfo.transferHook.title")}>
+          <ExtensionBox
+            icon={<Transfer size={16} />}
+            title={t("solana.token.extensionsInfo.transferHook.title")}
+          >
             <Paragraph>{t("solana.token.extensionsInfo.transferHook.description")}</Paragraph>
             {extensions.transferHook.programAddress ? (
               <Paragraph style={{ wordBreak: "break-all" }}>
