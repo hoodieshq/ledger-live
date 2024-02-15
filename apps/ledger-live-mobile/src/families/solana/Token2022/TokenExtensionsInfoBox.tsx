@@ -2,7 +2,7 @@ import React from "react";
 import { View } from "react-native";
 import BigNumber from "bignumber.js";
 import { Trans } from "react-i18next";
-import { Flex, Text, Alert, Link, Box } from "@ledgerhq/native-ui";
+import { Flex, Text, Alert, Box } from "@ledgerhq/native-ui";
 import {
   SolanaTokenAccount,
   SolanaTokenAccountExtensions,
@@ -12,6 +12,7 @@ import TooltipLabel from "~/components/TooltipLabel";
 import TokenExtensionsInfoDrawer from "./TokenExtensionsInfoDrawer";
 import { InfoMedium } from "@ledgerhq/native-ui/assets/icons";
 import CopyButton from "../shared/CopyButton";
+import Button from "~/components/Button";
 
 export default function TokenExtensionsInfoBox({
   tokenAccount,
@@ -36,7 +37,7 @@ export default function TokenExtensionsInfoBox({
   return (
     <View>
       <Alert showIcon={extensionsSize.length === 1} type="info">
-        <Flex flexDirection="column" columnGap={4} alignItems="flex-start">
+        <Flex width="100%" flexDirection="column" columnGap={4} alignItems="flex-start">
           {!!extensions.nonTransferable && (
             <Text>
               <Trans i18nKey="solana.token.nonTransferable.notice" />
@@ -139,10 +140,21 @@ export default function TokenExtensionsInfoBox({
               tooltip={<Trans i18nKey="solana.token.requiredMemoOnTransfer.tooltipHint" />}
             />
           )}
-          <Box mt={4}>
-            <Link type="color" size="medium" Icon={InfoMedium} onPress={openDrawer}>
+          <Box width="100%" mt={4}>
+            {/* <Link type="color" size="medium" Icon={InfoMedium} onPress={openDrawer}>
               <Trans i18nKey="common.moreInfo" />
-            </Link>
+            </Link> */}
+            <Button
+              type="color"
+              size="small"
+              maxWidth={150}
+              alignSelf="center"
+              outline
+              Icon={InfoMedium}
+              onPress={openDrawer}
+            >
+              <Trans i18nKey="common.moreInfo" />
+            </Button>
           </Box>
         </Flex>
       </Alert>

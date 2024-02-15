@@ -5791,7 +5791,7 @@
         "notice": "Token is non-transferable"
       },
       "interestRate": {
-        "notice": "Interest rate: {{rate}}%",
+        "notice": "Interest rate {{rate}}%",
         "tooltipHint": "For cosmetic purposes only, no new tokens are created as a result of the interest"
       },
       "permanentDelegate": {
