@@ -197,6 +197,27 @@ describe("Solana tokens bridge integration tests", () => {
     tokenProgram: "spl-token-2022",
   };
 
+  const buildTransferFeeConfig = (bps: number, maxFee: number): TransferFeeConfigExt => {
+    return {
+      extension: "transferFeeConfig",
+      state: {
+        newerTransferFee: {
+          epoch: 300,
+          maximumFee: maxFee,
+          transferFeeBasisPoints: bps,
+        },
+        olderTransferFee: {
+          epoch: 299,
+          maximumFee: maxFee,
+          transferFeeBasisPoints: bps,
+        },
+        transferFeeConfigAuthority: null,
+        withdrawWithheldAuthority: null,
+        withheldAmount: 0,
+      },
+    };
+  };
+
   test("token.transfer :: status is error: sender ATA is frozen", async () => {
     const api = {
       ...baseAPI,
@@ -369,24 +390,7 @@ describe("Solana tokens bridge integration tests", () => {
     const magnitude = BigNumber(10).pow(baseTokenMintMock.data.parsed.info.decimals);
     const maxFee = BigNumber(10).times(magnitude).toNumber();
     const bps = 100;
-    const transferConfigExt: TransferFeeConfigExt = {
-      extension: "transferFeeConfig",
-      state: {
-        newerTransferFee: {
-          epoch: 300,
-          maximumFee: maxFee,
-          transferFeeBasisPoints: bps,
-        },
-        olderTransferFee: {
-          epoch: 300,
-          maximumFee: maxFee,
-          transferFeeBasisPoints: bps,
-        },
-        transferFeeConfigAuthority: null,
-        withdrawWithheldAuthority: null,
-        withheldAmount: 0,
-      },
-    };
+    const transferConfigExt: TransferFeeConfigExt = buildTransferFeeConfig(bps, maxFee);
     mintWithTransferFeeMock.data.parsed.info.extensions = [transferConfigExt];
     const api = {
       ...baseAPI,
@@ -447,24 +451,8 @@ describe("Solana tokens bridge integration tests", () => {
     const magnitude = BigNumber(10).pow(baseTokenMintMock.data.parsed.info.decimals);
     const maxFee = BigNumber(10).times(magnitude).toNumber();
     const bps = 100;
-    const transferConfigExt: TransferFeeConfigExt = {
-      extension: "transferFeeConfig",
-      state: {
-        newerTransferFee: {
-          epoch: 300,
-          maximumFee: maxFee,
-          transferFeeBasisPoints: bps,
-        },
-        olderTransferFee: {
-          epoch: 300,
-          maximumFee: maxFee,
-          transferFeeBasisPoints: bps,
-        },
-        transferFeeConfigAuthority: null,
-        withdrawWithheldAuthority: null,
-        withheldAmount: 0,
-      },
-    };
+    const transferConfigExt: TransferFeeConfigExt = buildTransferFeeConfig(bps, maxFee);
+
     mintWithTransferFeeMock.data.parsed.info.extensions = [transferConfigExt];
     const balance = BigNumber(100).times(magnitude);
     const api = {
@@ -513,7 +501,6 @@ describe("Solana tokens bridge integration tests", () => {
       currentEpoch: 300,
       transferFeeConfigState: transferConfigExt.state,
     });
-    console.warn(transferFeeConfig);
 
     const expectedTxStatus: TransactionStatus = {
       amount: new BigNumber(maxSpendable),
@@ -529,6 +516,56 @@ describe("Solana tokens bridge integration tests", () => {
     expect(
       (preparedTx.model.commandDescriptor?.command as TokenTransferCommand).extensions?.transferFee,
     ).toEqual(transferFeeConfig);
+    expect(receivedTxStatus).toEqual(expectedTxStatus);
+  });
+
+  test("token2022.transfer :: transfer fee is zero :: send amount success", async () => {
+    const mintWithTransferFeeMock = cloneDeep(baseToken2022MintMock);
+    mintWithTransferFeeMock.data.program = "spl-token-2022";
+
+    const magnitude = BigNumber(10).pow(baseTokenMintMock.data.parsed.info.decimals);
+    const maxFee = BigNumber(10).times(magnitude).toNumber();
+    const bps = 0;
+    const transferConfigExt: TransferFeeConfigExt = buildTransferFeeConfig(bps, maxFee);
+
+    mintWithTransferFeeMock.data.parsed.info.extensions = [transferConfigExt];
+    const balance = BigNumber(100).times(magnitude);
+    const api = {
+      ...baseAPI,
+      getAccountInfo: (address: string) => {
+        if (address === wSolToken.contractAddress) {
+          return Promise.resolve(mintWithTransferFeeMock as any);
+        }
+        return Promise.resolve({ data: baseAta2022Mock });
+      },
+      getBalance: () => Promise.resolve(balance.toNumber()),
+      getEpochInfo: () => Promise.resolve({ epoch: 300 } as any),
+    } as ChainAPI;
+
+    const account: SolanaAccount = {
+      ...baseSolanaAccount,
+      subAccounts: [
+        {
+          ...mockedToken2022Acc,
+          balance: balance,
+          spendableBalance: balance,
+          extensions: {
+            transferFee: { feeBps: bps },
+          },
+        } as SolanaTokenAccount,
+      ],
+    };
+
+    const preparedTx = await prepareTransaction(account, baseTx, api);
+    const receivedTxStatus = await getTransactionStatus(account, preparedTx);
+
+    const expectedTxStatus: TransactionStatus = {
+      amount: new BigNumber(10),
+      estimatedFees: new BigNumber(testData.fees),
+      totalSpent: new BigNumber(10),
+      errors: {},
+      warnings: {},
+    };
     expect(receivedTxStatus).toEqual(expectedTxStatus);
   });
 
