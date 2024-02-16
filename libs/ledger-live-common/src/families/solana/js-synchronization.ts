@@ -438,8 +438,14 @@ function txToTokenAccOperation(
     return undefined;
   }
 
+  const { message } = tx.parsed.transaction;
   const assocTokenAccIndex = tx.parsed.transaction.message.accountKeys.findIndex(v =>
     v.pubkey.equals(assocTokenAcc.onChainAcc.pubkey),
+  );
+
+  const accountOwner = assocTokenAcc.info.owner.toBase58();
+  const accountOwnerIndex = message.accountKeys.findIndex(
+    pma => pma.pubkey.toBase58() === accountOwner,
   );
 
   if (assocTokenAccIndex < 0) {
@@ -456,9 +462,13 @@ function txToTokenAccOperation(
     new BigNumber(preTokenBalance?.uiTokenAmount.amount ?? 0),
   );
 
+  const isFeePayer = accountOwnerIndex === 0;
+  const txFee = new BigNumber(tx.parsed.meta.fee);
+
   const opType = getTokenAccOperationType({ tx: tx.parsed.transaction, delta });
 
   const txHash = tx.info.signature;
+  const opFee = isFeePayer ? txFee : new BigNumber(0);
 
   const { senders, recipients } = getTokenSendersRecipients(tx);
 
@@ -469,7 +479,7 @@ function txToTokenAccOperation(
     hash: txHash,
     date: new Date(tx.info.blockTime * 1000),
     blockHeight: tx.info.slot,
-    fee: new BigNumber(0),
+    fee: opFee,
     recipients,
     senders,
     value: delta.abs(),
