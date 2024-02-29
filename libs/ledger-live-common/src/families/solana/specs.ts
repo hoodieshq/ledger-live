@@ -1,6 +1,6 @@
 import invariant from "invariant";
 import expect from "expect";
-import { getCryptoCurrencyById, listTokensForCryptoCurrency } from "@ledgerhq/cryptoassets";
+import { getCryptoCurrencyById } from "@ledgerhq/cryptoassets";
 import { DeviceModelId } from "@ledgerhq/devices";
 import {
   botTest,
@@ -23,7 +23,6 @@ import { SYSTEM_ACCOUNT_RENT_EXEMPT, assertUnreachable } from "./utils";
 import { getCurrentSolanaPreloadData } from "./js-preload-data";
 import { sample } from "lodash/fp";
 import BigNumber from "bignumber.js";
-import { CryptoCurrency } from "@ledgerhq/types-cryptoassets";
 import { Account, TokenAccount } from "@ledgerhq/types-live";
 import { SolanaRecipientAssociatedTokenAccountWillBeFunded } from "./errors";
 
@@ -475,23 +474,23 @@ const solana: AppSpec<Transaction> = {
       },
     },
     {
-      name: "Transfer ~50% USDC with ATA creation",
+      name: "Transfer ~50% of spl token with ATA creation",
       maxRun: 1,
       deviceAction: acceptTransferTokensWithATACreationTransaction,
-      transaction: ({ account, bridge, siblings }) => {
-        const usdcToken = findUsdcTokenCurrency(account.currency);
-        invariant(usdcToken, "USDC token not listed");
+      transaction: ({ account, bridge, siblings, maxSpendable }) => {
+        invariant(maxSpendable.gt(0), "balance is 0");
 
-        const senderAccWithUsdc = findTokenSubAccount(account, usdcToken.id);
-        invariant(senderAccWithUsdc, "Sender account doesn't have USDC ATA");
+        const senderTokenAcc = findTokenSubAccountWithBalance(account);
+        invariant(senderTokenAcc, "Sender token account with available balance not found");
 
-        const siblingWithoutUsdc = siblings.find(acc => !findTokenSubAccount(acc, usdcToken.id));
-        invariant(siblingWithoutUsdc, "Recipient without USDC ATA was not found");
+        const token = senderTokenAcc.token;
+        const siblingWithoutToken = siblings.find(acc => !findTokenSubAccount(acc, token.id));
+        invariant(siblingWithoutToken, `Recipient without ${token.ticker} ATA not found`);
 
-        const amount = senderAccWithUsdc.balance.div(1.9 + 0.2 * Math.random()).integerValue();
-        const recipient = siblingWithoutUsdc.freshAddress;
+        const amount = senderTokenAcc.balance.div(1.9 + 0.2 * Math.random()).integerValue();
+        const recipient = siblingWithoutToken.freshAddress;
         const transaction = bridge.createTransaction(account);
-        const subAccountId = senderAccWithUsdc.id;
+        const subAccountId = senderTokenAcc.id;
 
         return {
           transaction,
@@ -503,51 +502,35 @@ const solana: AppSpec<Transaction> = {
           recipient: new SolanaRecipientAssociatedTokenAccountWillBeFunded(),
         };
       },
-      test: ({ account, accountBeforeTransaction, status }) => {
-        const usdcTokenAccAfterTx = findUsdcTokenAccount(account);
-        const usdcTokenAccBeforeTx = findUsdcTokenAccount(accountBeforeTransaction);
-
-        botTest("usdc balance decreased with operation", () =>
-          expect(usdcTokenAccAfterTx?.balance.toString()).toBe(
-            usdcTokenAccBeforeTx?.balance.minus(status.amount).toString(),
-          ),
-        );
+      test: input => {
+        expectTokenAccountCorrectBalanceChange(input);
       },
     },
     {
-      name: "Transfer ~50% USDC to existing ATA",
+      name: "Transfer ~50% of spl token to existing ATA",
       maxRun: 1,
       deviceAction: acceptTransferTokensTransaction,
-      transaction: ({ account, bridge, siblings }) => {
-        const usdcToken = findUsdcTokenCurrency(account.currency);
-        invariant(usdcToken, "USDC token not listed");
+      transaction: ({ account, bridge, siblings, maxSpendable }) => {
+        invariant(maxSpendable.gt(0), "balance is 0");
 
-        const senderAccWithUsdc = findTokenSubAccount(account, usdcToken.id);
-        invariant(senderAccWithUsdc, "Sender account doesn't have USDC token ATA");
+        const senderTokenAcc = findTokenSubAccountWithBalance(account);
+        invariant(senderTokenAcc, "Sender token account with available balance not found");
 
-        const siblingWithUsdc = siblings.find(acc => findTokenSubAccount(acc, usdcToken.id));
-        invariant(siblingWithUsdc, "No siblings with USDC token ATA");
+        const token = senderTokenAcc.token;
+        const siblingTokenAccount = siblings.find(acc => findTokenSubAccount(acc, token.id));
+        invariant(siblingTokenAccount, `Sibling with ${token.ticker} token ATA not found`);
 
-        const amount = senderAccWithUsdc.balance.div(1.9 + 0.2 * Math.random()).integerValue();
-        const recipient = siblingWithUsdc.freshAddress;
-
+        const amount = senderTokenAcc.balance.div(1.9 + 0.2 * Math.random()).integerValue();
+        const recipient = siblingTokenAccount.freshAddress;
         const transaction = bridge.createTransaction(account);
-        const subAccountId = senderAccWithUsdc.id;
-
+        const subAccountId = senderTokenAcc.id;
         return {
           transaction,
           updates: [{ subAccountId }, { recipient }, { amount }],
         };
       },
-      test: ({ account, accountBeforeTransaction, status }) => {
-        const usdcTokenAccAfterTx = findUsdcTokenAccount(account);
-        const usdcTokenAccBeforeTx = findUsdcTokenAccount(accountBeforeTransaction);
-
-        botTest("usdc balance decreased with operation", () =>
-          expect(usdcTokenAccAfterTx?.balance.toString()).toBe(
-            usdcTokenAccBeforeTx?.balance.minus(status.amount).toString(),
-          ),
-        );
+      test: input => {
+        expectTokenAccountCorrectBalanceChange(input);
       },
     },
   ],
@@ -598,9 +581,26 @@ function expectCorrectBalanceChange(input: TransactionTestInput<Transaction>) {
   );
 }
 
-function findUsdcTokenCurrency(currency: CryptoCurrency) {
-  const splTokens = listTokensForCryptoCurrency(currency);
-  return splTokens.find(token => token.ticker === "USDC");
+function expectTokenAccountCorrectBalanceChange({
+  account,
+  accountBeforeTransaction,
+  status,
+  transaction,
+}: TransactionTestInput<Transaction>) {
+  const tokenAccId = transaction.subAccountId;
+  if (!tokenAccId) throw new Error("Wrong transaction!");
+  const tokenAccAfterTx = account.subAccounts?.find(acc => acc.id === tokenAccId);
+  const tokenAccBeforeTx = accountBeforeTransaction.subAccounts?.find(acc => acc.id === tokenAccId);
+
+  if (!tokenAccAfterTx || !tokenAccBeforeTx) {
+    throw new Error("token sub accounts not found!");
+  }
+
+  botTest("token balance decreased with operation", () =>
+    expect(tokenAccAfterTx.balance.toString()).toBe(
+      tokenAccBeforeTx.balance.minus(status.amount).toString(),
+    ),
+  );
 }
 
 function findTokenSubAccount(account: Account, tokenId: string) {
@@ -609,10 +609,10 @@ function findTokenSubAccount(account: Account, tokenId: string) {
   ) as TokenAccount | undefined;
 }
 
-function findUsdcTokenAccount(account: Account) {
-  const usdcToken = findUsdcTokenCurrency(account.currency);
-  if (!usdcToken) throw new Error("USDC token not found");
-  return findTokenSubAccount(account, usdcToken.id);
+function findTokenSubAccountWithBalance(account: Account) {
+  return account.subAccounts?.find(acc => acc.type === "TokenAccount" && acc.balance.gt(0)) as
+    | TokenAccount
+    | undefined;
 }
 
 export default {
