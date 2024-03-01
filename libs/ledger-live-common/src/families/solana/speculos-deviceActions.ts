@@ -245,7 +245,11 @@ export const acceptTransferTokensTransaction: DeviceAction<Transaction, any> = d
         const command = transaction.model.commandDescriptor?.command;
         if (command?.kind === "token.transfer" && transaction.subAccountId) {
           const tokenCurrency = findTokenAccount(account, transaction.subAccountId).token;
-          return formatTokenAmount(tokenCurrency, command.amount);
+          // transfer fee is added to amount for a tokens with tx fee extension
+          // [solana/api/chain/web3.ts -> buildTokenTransferInstructions]
+          const amount =
+            command.extensions?.transferFee?.transferAmountIncludingFee || command.amount;
+          return formatTokenAmount(tokenCurrency, amount);
         }
         throwUnexpectedTransaction();
       },
@@ -345,7 +349,11 @@ export const acceptTransferTokensWithATACreationTransaction: DeviceAction<Transa
           const command = transaction.model.commandDescriptor?.command;
           if (command?.kind === "token.transfer" && transaction.subAccountId) {
             const tokenCurrency = findTokenAccount(account, transaction.subAccountId).token;
-            return formatTokenAmount(tokenCurrency, command.amount);
+            // transfer fee is added to amount for a tokens with tx fee extension
+            // [solana/api/chain/web3.ts -> buildTokenTransferInstructions]
+            const amount =
+              command.extensions?.transferFee?.transferAmountIncludingFee || command.amount;
+            return formatTokenAmount(tokenCurrency, amount);
           }
           throwUnexpectedTransaction();
         },
