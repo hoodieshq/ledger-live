@@ -254,6 +254,17 @@ export const acceptTransferTokensTransaction: DeviceAction<Transaction, any> = d
         throwUnexpectedTransaction();
       },
     },
+    // {
+    //   title: "Mint",
+    //   button: SpeculosButton.RIGHT,
+    //   expectedValue: ({ transaction }) => {
+    //     const command = transaction.model.commandDescriptor?.command;
+    //     if (command?.kind === "token.transfer") {
+    //       return ellipsis(command.mintAddress);
+    //     }
+    //     throwUnexpectedTransaction();
+    //   },
+    // },
     {
       title: "From",
       button: SpeculosButton.RIGHT,
@@ -343,6 +354,17 @@ export const acceptTransferTokensWithATACreationTransaction: DeviceAction<Transa
           throwUnexpectedTransaction();
         },
       },
+      // {
+      //   title: "Mint",
+      //   button: SpeculosButton.RIGHT,
+      //   expectedValue: ({ transaction }) => {
+      //     const command = transaction.model.commandDescriptor?.command;
+      //     if (command?.kind === "token.transfer") {
+      //       return ellipsis(command.mintAddress);
+      //     }
+      //     throwUnexpectedTransaction();
+      //   },
+      // },
       {
         title: "From",
         button: SpeculosButton.RIGHT,
