@@ -77,14 +77,6 @@ export default function TokenTransferFeesWarning({
           </Text>
         </View>
       </SummaryRow>
-
-      <SummaryRow title={<Trans i18nKey="solana.token.transferFees.feeWithholdingAddressLabel" />}>
-        <View style={{ flex: 1, alignItems: "flex-end" }}>
-          <Text ellipsizeMode="tail" numberOfLines={1} style={styles.valueText}>
-            {transaction.recipient}
-          </Text>
-        </View>
-      </SummaryRow>
     </View>
   );
 }

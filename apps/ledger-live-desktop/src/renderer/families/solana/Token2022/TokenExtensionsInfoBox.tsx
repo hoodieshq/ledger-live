@@ -64,24 +64,15 @@ export default function TokenExtensionsInfoBox({ tokenAccount, extensions, ...bo
           )}
 
           {extensions.permanentDelegate ? (
-            extensions.permanentDelegate.delegateAddress ? (
-              <LabelInfoTooltip
-                text={
-                  <Trans
-                    i18nKey="solana.token.permanentDelegate.tooltipHint"
-                    values={{ delegateAddress: extensions.permanentDelegate.delegateAddress }}
-                  />
-                }
-              >
-                <Text>
-                  <Trans i18nKey="solana.token.permanentDelegate.notice" />
-                </Text>
-              </LabelInfoTooltip>
-            ) : (
+            <LabelInfoTooltip text={<Trans i18nKey="solana.token.permanentDelegate.tooltipHint" />}>
               <Text>
-                <Trans i18nKey="solana.token.permanentDelegate.initializationNotice" />
+                {extensions.permanentDelegate.delegateAddress ? (
+                  <Trans i18nKey="solana.token.permanentDelegate.notice" />
+                ) : (
+                  <Trans i18nKey="solana.token.permanentDelegate.initializationNotice" />
+                )}
               </Text>
-            )
+            </LabelInfoTooltip>
           ) : null}
 
           {!!extensions.transferFee && (

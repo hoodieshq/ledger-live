@@ -82,9 +82,16 @@ export default function TokenExtensionsInfoBox({
                 }
               />
             ) : (
-              <Text>
-                <Trans i18nKey="solana.token.permanentDelegate.initializationNotice" />
-              </Text>
+              <TooltipLabel
+                label={
+                  <Text>
+                    <Trans i18nKey="solana.token.permanentDelegate.initializationNotice" />
+                  </Text>
+                }
+                tooltip={
+                  <Trans i18nKey="solana.token.permanentDelegate.initializationNoticeTooltipHint" />
+                }
+              />
             )
           ) : null}
 

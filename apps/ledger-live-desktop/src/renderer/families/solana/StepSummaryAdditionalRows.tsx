@@ -87,18 +87,6 @@ function TransferFeeAdditionalRows({
           </Box>
         </Box>
       </Box>
-      <Box horizontal justifyContent="space-between" alignItems="center">
-        <Text ff="Inter|Medium" color="palette.text.shade40" fontSize={4}>
-          <Trans i18nKey="solana.token.transferFees.feeWithholdingAddressLabel" />
-        </Text>
-        <Box style={{ maxWidth: "50%" }}>
-          <Ellipsis>
-            <Text ff="Inter" color="palette.text.shade80" fontSize={4}>
-              {transaction.recipient}
-            </Text>
-          </Ellipsis>
-        </Box>
-      </Box>
     </>
   );
 }
