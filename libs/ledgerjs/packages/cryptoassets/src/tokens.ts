@@ -424,7 +424,6 @@ function convertElrondESDTTokens([
   };
 }
 
-/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 function convertSplTokens([
   chainId,
   name,

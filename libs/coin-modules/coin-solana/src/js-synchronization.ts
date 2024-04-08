@@ -666,18 +666,6 @@ function getTokenAccOperationType({
   const parsedIxs = parseTxInstructions(tx);
   const [mainIx, ...otherIxs] = parsedIxs;
 
-  if (parsedIxs.length === 3) {
-    const [first, second, third] = parsedIxs;
-    if (
-      first.program === "compute-budget" &&
-      second.program === "compute-budget" &&
-      third.program === "spl-token" &&
-      third.instruction.type === "burn"
-    ) {
-      return "BURN";
-    }
-  }
-
   if (mainIx !== undefined && otherIxs.length === 0) {
     switch (mainIx.program) {
       case "spl-associated-token-account":
@@ -692,6 +680,8 @@ function getTokenAccOperationType({
             return "FREEZE";
           case "thawAccount":
             return "UNFREEZE";
+          case "burn":
+            return "BURN";
         }
     }
   }
@@ -703,7 +693,7 @@ function getTokenAccOperationType({
 function parseTxInstructions(tx: ParsedTransaction) {
   return tx.message.instructions
     .map(ix => parseQuiet(ix))
-    .filter(({ program }) => program !== "spl-memo");
+    .filter(({ program }) => program !== "spl-memo" && program !== "unknown");
 }
 
 function dropMemoLengthPrefixIfAny(memo: string) {
