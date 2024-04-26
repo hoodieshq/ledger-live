@@ -280,6 +280,7 @@ export type SolanaTokenAccountExtensions = {
   nonTransferable?: boolean;
   interestRate?: {
     rateBps: number;
+    accruedDelta?: number;
   };
   transferFee?: {
     feeBps: number;

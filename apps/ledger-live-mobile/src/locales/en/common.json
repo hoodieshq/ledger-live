@@ -5835,6 +5835,7 @@
         "interestBearing": {
           "title": "Interest-Bearing Tokens",
           "currentInterestRate": "Current interest rate is {{rate}}%.",
+          "accruedDelta": "Accrued {{delta}}.",
           "interestRateNotSetup": "Current interest rate is set up to 0%.",
           "description": "Tokens that constantly grow or decrease in value according on its interest rate. No new tokens are ever created, the feature is entirely cosmetic."
         }

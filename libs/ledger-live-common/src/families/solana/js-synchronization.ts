@@ -5,6 +5,7 @@ import { emptyHistoryCache, encodeAccountId } from "../../account";
 import {
   getAccountMinimumBalanceForRentExemption,
   getMaybeTokenMint,
+  getTokenAccruedInterestDelta,
   getTransactions,
   ParsedOnChainStakeAccountWithInfo,
   toStakeAccountWithInfo,
@@ -50,7 +51,7 @@ import {
 } from "./types";
 import { Account, Operation, OperationType, TokenAccount } from "@ledgerhq/types-live";
 import { DelegateInfo, WithdrawInfo } from "./api/chain/instruction/stake/types";
-import { MintExtensions, TokenAccountExtensions } from "./api/chain/account/tokenExtensions";
+import { MintExtensions } from "./api/chain/account/tokenExtensions";
 
 type OnChainTokenAccount = Awaited<ReturnType<typeof getAccount>>["tokenAccounts"][number];
 
@@ -135,14 +136,16 @@ export const getAccountShapeWithAPI = async (
 
     const nextSubAcc =
       subAcc === undefined
-        ? newSubAcc({
+        ? await newSubAcc({
+            api,
             mainAccountId,
             assocTokenAcc,
             txs,
             mintExtensions,
             epoch,
           })
-        : patchedSubAcc({
+        : await patchedSubAcc({
+            api,
             subAcc,
             assocTokenAcc,
             txs,
@@ -267,19 +270,21 @@ export const getAccountShapeWithAPI = async (
   return shape;
 };
 
-function newSubAcc({
+async function newSubAcc({
+  api,
   mainAccountId,
   assocTokenAcc,
   txs,
   mintExtensions,
   epoch,
 }: {
+  api: ChainAPI;
   mainAccountId: string;
   assocTokenAcc: OnChainTokenAccount;
   txs: TransactionDescriptor[];
   mintExtensions?: MintExtensions;
   epoch: number;
-}): SolanaTokenAccount {
+}): Promise<SolanaTokenAccount> {
   const firstTx = txs[txs.length - 1];
   const creationDate = new Date((firstTx?.info?.blockTime ?? Date.now() / 1000) * 1000);
 
@@ -322,19 +327,21 @@ function newSubAcc({
   };
 }
 
-function patchedSubAcc({
+async function patchedSubAcc({
+  api,
   subAcc,
   assocTokenAcc,
   txs,
   mintExtensions,
   epoch,
 }: {
+  api: ChainAPI;
   subAcc: TokenAccount;
   assocTokenAcc: OnChainTokenAccount;
   txs: TransactionDescriptor[];
   mintExtensions?: MintExtensions;
   epoch: number;
-}): SolanaTokenAccount {
+}): Promise<SolanaTokenAccount> {
   const balance = new BigNumber(assocTokenAcc.info.tokenAmount.amount);
 
   const newOps = compact(txs.map(tx => txToTokenAccOperation(tx, assocTokenAcc, subAcc.id)));
@@ -342,7 +349,7 @@ function patchedSubAcc({
   const totalOps = mergeOps(subAcc.operations, newOps);
   const extensions =
     mintExtensions || assocTokenAcc.info.extensions
-      ? toSolanaTokenAccExtensions(mintExtensions, assocTokenAcc.info.extensions, epoch)
+      ? await toSolanaTokenAccExtensions(api, mintExtensions, assocTokenAcc, epoch)
       : undefined;
 
   return {
@@ -356,16 +363,32 @@ function patchedSubAcc({
   };
 }
 
-function toSolanaTokenAccExtensions(
+async function toSolanaTokenAccExtensions(
+  api: ChainAPI,
   mintExtensions: MintExtensions | undefined,
-  accExtension: TokenAccountExtensions | undefined,
+  assocTokenAcc: OnChainTokenAccount,
   epoch: number,
 ) {
-  return [...(mintExtensions || []), ...(accExtension || [])].reduce<SolanaTokenAccountExtensions>(
-    (acc, tokenExt) => {
+  const accExtension = assocTokenAcc.info.extensions || [];
+  return [...(mintExtensions || []), ...accExtension].reduce<Promise<SolanaTokenAccountExtensions>>(
+    async (acc, tokenExt) => {
       switch (tokenExt.extension) {
-        case "interestBearingConfig":
-          return { ...acc, interestRate: { rateBps: tokenExt.state.currentRate } };
+        case "interestBearingConfig": {
+          const delta = await getTokenAccruedInterestDelta(
+            api,
+            BigNumber(assocTokenAcc.info.tokenAmount.amount),
+            assocTokenAcc.info.tokenAmount.decimals,
+            assocTokenAcc.info.mint.toBase58(),
+            assocTokenAcc.info.owner.toBase58(),
+          );
+          return {
+            ...acc,
+            interestRate: {
+              rateBps: tokenExt.state.currentRate,
+              accruedDelta: delta?.toNumber(),
+            },
+          };
+        }
         case "nonTransferable":
           return { ...acc, nonTransferable: true };
         case "permanentDelegate":
@@ -396,7 +419,7 @@ function toSolanaTokenAccExtensions(
           return acc;
       }
     },
-    {},
+    Promise.resolve({}),
   );
 }
 

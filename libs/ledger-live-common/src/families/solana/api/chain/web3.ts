@@ -1,4 +1,6 @@
 import {
+  TOKEN_2022_PROGRAM_ID,
+  createAmountToUiAmountInstruction,
   createAssociatedTokenAccountInstruction,
   createTransferCheckedInstruction,
   createTransferCheckedWithTransferHookInstruction,
@@ -14,6 +16,8 @@ import {
   StakeProgram,
   SystemProgram,
   TransactionInstruction,
+  TransactionMessage,
+  VersionedTransaction,
 } from "@solana/web3.js";
 import chunk from "lodash/chunk";
 import { ChainAPI } from ".";
@@ -35,6 +39,7 @@ import { parseStakeAccountInfo, tryParseAsMintAccount } from "./account/parser";
 import { StakeAccountInfo } from "./account/stake";
 import { MintAccountInfo, TokenAccountInfo } from "./account/token";
 import { VoteAccountInfo } from "./account/vote";
+import BigNumber from "bignumber.js";
 
 const MEMO_PROGRAM_ID = "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr";
 
@@ -323,6 +328,42 @@ export async function getAccountMinimumBalanceForRentExemption(api: ChainAPI, ad
   const accSpace = accInfo !== null && "parsed" in accInfo.data ? accInfo.data.space : 0;
 
   return api.getMinimumBalanceForRentExemption(accSpace);
+}
+
+// for tokens2022 with interest bearing extension
+export async function getTokenAccruedInterestDelta(
+  api: ChainAPI,
+  amount: BigNumber,
+  magnitude: number,
+  mint: string,
+  payerAddress: string,
+) {
+  const transaction = new VersionedTransaction(
+    new TransactionMessage({
+      instructions: [
+        createAmountToUiAmountInstruction(
+          new PublicKey(mint),
+          amount.toNumber(),
+          TOKEN_2022_PROGRAM_ID,
+        ),
+      ],
+      recentBlockhash: PublicKey.default.toString(),
+      payerKey: new PublicKey(payerAddress),
+    }).compileToV0Message(),
+  );
+  const { returnData } = (
+    await api.connection.simulateTransaction(transaction, {
+      sigVerify: false,
+      replaceRecentBlockhash: true,
+    })
+  ).value;
+
+  if (!returnData?.data) return null;
+
+  const accruedAmount = BigNumber(
+    Buffer.from(returnData.data[0], returnData.data[1]).toString("utf-8"),
+  ).multipliedBy(BigNumber(10).pow(magnitude));
+  return accruedAmount.minus(amount).abs().decimalPlaces(0, 1);
 }
 
 export async function getStakeAccountAddressWithSeed({

@@ -68,6 +68,7 @@ const ExtensionBox = ({
 
 function TokenExtensionsInfoDrawer({ tokenAccount, extensions, isOpen, closeDrawer }: Props) {
   const { t } = useTranslation();
+  const unit = tokenAccount.token.units[0];
   return (
     <SideDrawer
       title={t("solana.token.extensionsInfo.title")}
@@ -97,7 +98,22 @@ function TokenExtensionsInfoDrawer({ tokenAccount, extensions, isOpen, closeDraw
               <Paragraph>
                 {t("solana.token.extensionsInfo.interestBearing.currentInterestRate", {
                   rate: bpsToPercent(extensions.interestRate.rateBps),
-                })}
+                })}{" "}
+                {!!extensions.interestRate.accruedDelta && (
+                  <>
+                    {t("solana.token.extensionsInfo.interestBearing.accruedDelta", {
+                      delta: formatCurrencyUnit(
+                        unit,
+                        new BigNumber(extensions.interestRate.accruedDelta),
+                        {
+                          disableRounding: true,
+                          alwaysShowSign: false,
+                          showCode: true,
+                        },
+                      ),
+                    })}
+                  </>
+                )}
               </Paragraph>
             ) : (
               <Paragraph>
@@ -140,15 +156,11 @@ function TokenExtensionsInfoDrawer({ tokenAccount, extensions, isOpen, closeDraw
               {t("solana.token.extensionsInfo.transferFee.currentTransferFee", {
                 feePercent: bpsToPercent(extensions.transferFee.feeBps),
                 feeBps: extensions.transferFee.feeBps,
-                maxFee: formatCurrencyUnit(
-                  tokenAccount.token.units[0],
-                  new BigNumber(extensions.transferFee.maxFee),
-                  {
-                    disableRounding: true,
-                    alwaysShowSign: false,
-                    showCode: true,
-                  },
-                ),
+                maxFee: formatCurrencyUnit(unit, new BigNumber(extensions.transferFee.maxFee), {
+                  disableRounding: true,
+                  alwaysShowSign: false,
+                  showCode: true,
+                }),
               })}
             </Paragraph>
           </ExtensionBox>
