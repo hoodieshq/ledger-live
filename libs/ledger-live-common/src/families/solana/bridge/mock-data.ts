@@ -905,4 +905,28 @@ export const getMockedMethods = (): {
       },
     ]],
   },
+  {
+    method: "getAccountInfo",
+    params: ["So11111111111111111111111111111111111111112"],
+    answer: {
+      data: {
+        parsed: {
+          info: {
+            decimals: 9,
+            freezeAuthority: null,
+            isInitialized: true,
+            mintAuthority: null,
+            supply: 0
+          },
+          type: "mint",
+        },
+        program: "spl-token",
+        space: 82,
+      },
+      executable: false,
+      lamports: 419787401967,
+      owner: new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"),
+      rentEpoch: 304,
+    },
+  },
 ];
