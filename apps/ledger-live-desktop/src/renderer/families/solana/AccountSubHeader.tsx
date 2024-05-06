@@ -1,7 +1,7 @@
 import React from "react";
 import { Trans } from "react-i18next";
 import { SolanaAccount, SolanaTokenAccount } from "@ledgerhq/live-common/families/solana/types";
-import { isTokenAccountFrozen } from "@ledgerhq/live-common/families/solana/logic";
+import { isTokenAccountFrozen } from "@ledgerhq/live-common/families/solana/token";
 import { SubAccount } from "@ledgerhq/types-live";
 
 import Box from "~/renderer/components/Box";

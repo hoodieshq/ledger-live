@@ -4,6 +4,8 @@ import BigNumber from "bignumber.js";
 import { emptyHistoryCache, encodeAccountId } from "@ledgerhq/coin-framework/account/index";
 import {
   getAccountMinimumBalanceForRentExemption,
+  getMaybeTokenMint,
+  getTokenAccruedInterestDelta,
   getTransactions,
   ParsedOnChainStakeAccountWithInfo,
   toStakeAccountWithInfo,
@@ -15,9 +17,6 @@ import {
   Awaited,
   encodeAccountIdWithTokenAccountAddress,
   isStakeLockUpInForce,
-  tokenIsListedOnLedger,
-  toTokenId,
-  toTokenMint,
   withdrawableFromStake,
 } from "./logic";
 import {
@@ -39,9 +38,18 @@ import { ChainAPI } from "./api";
 import { ParsedOnChainTokenAccountWithInfo, toTokenAccountWithInfo } from "./api/chain/web3";
 import { drainSeq } from "./utils";
 import { estimateTxFee } from "./tx-fees";
-import { SolanaAccount, SolanaOperationExtra, SolanaStake, SolanaTokenAccount } from "./types";
+import {
+  SolanaAccount,
+  SolanaOperationExtra,
+  SolanaStake,
+  SolanaTokenAccount,
+  SolanaTokenAccountExtensions,
+  SolanaTokenProgram,
+} from "./types";
 import { Operation, OperationType, TokenAccount } from "@ledgerhq/types-live";
 import { DelegateInfo, WithdrawInfo } from "./api/chain/instruction/stake/types";
+import { MintExtensions } from "./api/chain/account/tokenExtensions";
+import { toTokenId, toTokenMint, tokenIsListedOnLedger } from "./helpers/token";
 
 type OnChainTokenAccount = Awaited<ReturnType<typeof getAccount>>["tokenAccounts"][number];
 
@@ -62,6 +70,8 @@ export const getAccountShapeWithAPI = async (
     tokenAccounts: onChaintokenAccounts,
     stakes: onChainStakes,
   } = await getAccount(mainAccAddress, api);
+
+  const { epoch } = await api.getEpochInfo();
 
   const mainAccountId = encodeAccountId({
     type: "js",
@@ -91,7 +101,12 @@ export const getAccountShapeWithAPI = async (
       continue;
     }
 
-    const assocTokenAccAddress = await api.findAssocTokenAccAddress(mainAccAddress, mint);
+    const tokenProgram = accs[0].onChainAcc.account.data.program as SolanaTokenProgram;
+    const assocTokenAccAddress = await api.findAssocTokenAccAddress(
+      mainAccAddress,
+      mint,
+      tokenProgram,
+    );
 
     const assocTokenAcc = accs.find(
       ({ onChainAcc: { pubkey } }) => pubkey.toBase58() === assocTokenAccAddress,
@@ -111,23 +126,33 @@ export const getAccountShapeWithAPI = async (
       api,
     );
 
+    const mintInfo =
+      tokenProgram === "spl-token-2022" ? await getMaybeTokenMint(mint, api) : undefined;
+
+    const mintExtensions =
+      mintInfo && !(mintInfo instanceof Error) ? mintInfo.info.extensions : undefined;
+
     const nextSubAcc =
       subAcc === undefined
-        ? newSubAcc({
+        ? await newSubAcc({
+            api,
             mainAccountId,
             assocTokenAcc,
             txs,
+            mintExtensions,
+            epoch,
           })
-        : patchedSubAcc({
+        : await patchedSubAcc({
+            api,
             subAcc,
             assocTokenAcc,
             txs,
+            mintExtensions,
+            epoch,
           });
 
     nextSubAccs.push(nextSubAcc);
   }
-
-  const { epoch } = await api.getEpochInfo();
 
   const stakes: SolanaStake[] = onChainStakes.map(({ account, activation, reward }) => {
     const {
@@ -244,18 +269,23 @@ export const getAccountShapeWithAPI = async (
   return shape;
 };
 
-function newSubAcc({
+async function newSubAcc({
+  api,
   mainAccountId,
   assocTokenAcc,
   txs,
+  mintExtensions,
+  epoch,
 }: {
+  api: ChainAPI;
   mainAccountId: string;
   assocTokenAcc: OnChainTokenAccount;
   txs: TransactionDescriptor[];
-}): SolanaTokenAccount {
+  mintExtensions: MintExtensions | undefined;
+  epoch: number;
+}): Promise<SolanaTokenAccount> {
   const firstTx = txs[txs.length - 1];
-
-  const creationDate = new Date((firstTx.info.blockTime ?? Date.now() / 1000) * 1000);
+  const creationDate = new Date((firstTx?.info?.blockTime ?? Date.now() / 1000) * 1000);
 
   const tokenId = toTokenId(assocTokenAcc.info.mint.toBase58());
   const tokenCurrency = getTokenById(tokenId);
@@ -271,6 +301,11 @@ function newSubAcc({
 
   const newOps = compact(txs.map(tx => txToTokenAccOperation(tx, assocTokenAcc, accountId)));
 
+  const extensions =
+    mintExtensions || assocTokenAcc.info.extensions
+      ? await toSolanaTokenAccExtensions(api, mintExtensions, assocTokenAcc, epoch)
+      : undefined;
+
   return {
     balance,
     balanceHistoryCache: emptyHistoryCache,
@@ -282,26 +317,38 @@ function newSubAcc({
     pendingOperations: [],
     spendableBalance: balance,
     swapHistory: [],
+    tokenProgram: assocTokenAcc.onChainAcc.account.data.program as SolanaTokenProgram,
+    extensions,
     token: tokenCurrency,
     state: assocTokenAcc.info.state,
     type: "TokenAccount",
   };
 }
 
-function patchedSubAcc({
+async function patchedSubAcc({
+  api,
   subAcc,
   assocTokenAcc,
   txs,
+  mintExtensions,
+  epoch,
 }: {
+  api: ChainAPI;
   subAcc: TokenAccount;
   assocTokenAcc: OnChainTokenAccount;
   txs: TransactionDescriptor[];
-}): SolanaTokenAccount {
+  mintExtensions: MintExtensions | undefined;
+  epoch: number;
+}): Promise<SolanaTokenAccount> {
   const balance = new BigNumber(assocTokenAcc.info.tokenAmount.amount);
 
   const newOps = compact(txs.map(tx => txToTokenAccOperation(tx, assocTokenAcc, subAcc.id)));
 
   const totalOps = mergeOps(subAcc.operations, newOps);
+  const extensions =
+    mintExtensions || assocTokenAcc.info.extensions
+      ? await toSolanaTokenAccExtensions(api, mintExtensions, assocTokenAcc, epoch)
+      : undefined;
 
   return {
     ...subAcc,
@@ -309,7 +356,70 @@ function patchedSubAcc({
     spendableBalance: balance,
     operations: totalOps,
     state: assocTokenAcc.info.state,
+    tokenProgram: assocTokenAcc.onChainAcc.account.data.program as SolanaTokenProgram,
+    extensions,
   };
+}
+
+async function toSolanaTokenAccExtensions(
+  api: ChainAPI,
+  mintExtensions: MintExtensions | undefined,
+  assocTokenAcc: OnChainTokenAccount,
+  epoch: number,
+) {
+  const accExtension = assocTokenAcc.info.extensions || [];
+  return [...(mintExtensions || []), ...accExtension].reduce<Promise<SolanaTokenAccountExtensions>>(
+    async (prevPromise, tokenExt) => {
+      const acc = await prevPromise;
+      switch (tokenExt.extension) {
+        case "interestBearingConfig": {
+          const delta = await getTokenAccruedInterestDelta(
+            api,
+            BigNumber(assocTokenAcc.info.tokenAmount.amount),
+            assocTokenAcc.info.tokenAmount.decimals,
+            assocTokenAcc.info.mint.toBase58(),
+            assocTokenAcc.info.owner.toBase58(),
+          );
+          return {
+            ...acc,
+            interestRate: {
+              rateBps: tokenExt.state.currentRate,
+              accruedDelta: delta?.toNumber(),
+            },
+          };
+        }
+        case "nonTransferable":
+          return { ...acc, nonTransferable: true };
+        case "permanentDelegate":
+          return {
+            ...acc,
+            permanentDelegate: { delegateAddress: tokenExt.state?.delegate?.toBase58() },
+          };
+        case "memoTransfer":
+          return { ...acc, requiredMemoOnTransfer: !!tokenExt.state.requireIncomingTransferMemos };
+        case "transferFeeConfig": {
+          const { newerTransferFee, olderTransferFee } = tokenExt.state;
+          const transferFee = epoch >= newerTransferFee.epoch ? newerTransferFee : olderTransferFee;
+          return {
+            ...acc,
+            transferFee: {
+              feeBps: transferFee.transferFeeBasisPoints,
+              maxFee: transferFee.maximumFee,
+            },
+          };
+        }
+        case "transferHook": {
+          return {
+            ...acc,
+            transferHook: { programAddress: tokenExt.state?.programId?.toBase58() },
+          };
+        }
+        default:
+          return acc;
+      }
+    },
+    Promise.resolve({}),
+  );
 }
 
 function txToMainAccOperation(
@@ -500,7 +610,7 @@ function getMainAccOperationType({
   isFeePayer: boolean;
   balanceDelta: BigNumber;
 }): OperationType {
-  const type = getMainAccOperationTypeFromTx(tx);
+  const type = getMainAccOperationTypeFromTx(tx, isFeePayer);
 
   if (type !== undefined) {
     return type;
@@ -570,7 +680,10 @@ function getMainSendersRecipients(
   return initialSendersRecipients;
 }
 
-function getMainAccOperationTypeFromTx(tx: ParsedTransaction): OperationType | undefined {
+function getMainAccOperationTypeFromTx(
+  tx: ParsedTransaction,
+  isFeePayer: boolean,
+): OperationType | undefined {
   const parsedIxs = parseTxInstructions(tx);
 
   if (parsedIxs.length === 3) {
@@ -595,11 +708,12 @@ function getMainAccOperationTypeFromTx(tx: ParsedTransaction): OperationType | u
       case "spl-associated-token-account":
         switch (first.instruction.type) {
           case "associate":
-            return "OPT_IN";
+            return isFeePayer ? "OPT_OUT" : "OPT_IN";
         }
         // needed for lint
         break;
       case "spl-token":
+      case "spl-token-2022":
         switch (first.instruction.type) {
           case "closeAccount":
             return "OPT_OUT";
@@ -676,6 +790,7 @@ function getTokenAccOperationType({
         }
         break;
       case "spl-token":
+      case "spl-token-2022":
         switch (mainIx.instruction.type) {
           case "freezeAccount":
             return "FREEZE";
@@ -728,6 +843,11 @@ async function getAccount(
     .then(res => res.value)
     .then(map(toTokenAccountWithInfo));
 
+  const token2022Accounts = await api
+    .getParsedToken2022AccountsByOwner(address)
+    .then(res => res.value)
+    .then(map(toTokenAccountWithInfo));
+
   const stakeAccountsRaw = [
     // ...(await api.getStakeAccountsByStakeAuth(address)),
     ...(await api.getStakeAccountsByWithdrawAuth(address)),
@@ -764,7 +884,7 @@ async function getAccount(
   return {
     balance,
     blockHeight,
-    tokenAccounts,
+    tokenAccounts: [...tokenAccounts, ...token2022Accounts],
     stakes,
   };
 }

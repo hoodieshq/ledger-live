@@ -76,6 +76,15 @@ export type TokenRecipientDescriptor = {
   shouldCreateAsAssociatedTokenAccount: boolean;
 };
 
+export type TransferFeeCalculated = {
+  maxTransferFee: number;
+  transferFee: number;
+  feePercent: number;
+  feeBps: number;
+  transferAmountIncludingFee: number;
+  transferAmountExcludingFee: number;
+};
+
 export type TokenTransferCommand = {
   kind: "token.transfer";
   ownerAddress: string;
@@ -85,6 +94,10 @@ export type TokenTransferCommand = {
   mintAddress: string;
   mintDecimals: number;
   memo?: string | undefined;
+  tokenProgram: SolanaTokenProgram;
+  extensions?: {
+    transferFee?: TransferFeeCalculated | undefined;
+  };
 };
 
 export type Command =
@@ -265,8 +278,38 @@ export type SolanaAccount = Account & { solanaResources: SolanaResources };
 export type SolanaAccountRaw = AccountRaw & {
   solanaResources: SolanaResourcesRaw;
 };
-export type SolanaTokenAccount = TokenAccount & { state?: TokenAccountState };
-export type SolanaTokenAccountRaw = TokenAccountRaw & { state?: TokenAccountState };
+
+type Base58PubKey = string;
+export type SolanaTokenAccountExtensions = {
+  permanentDelegate?: {
+    delegateAddress: Base58PubKey | undefined;
+  };
+  nonTransferable?: boolean;
+  interestRate?: {
+    rateBps: number;
+    accruedDelta: number | undefined;
+  };
+  transferFee?: {
+    feeBps: number;
+    maxFee: number;
+  };
+  requiredMemoOnTransfer?: boolean;
+  transferHook?: {
+    programAddress: Base58PubKey | undefined;
+  };
+};
+
+export type SolanaTokenProgram = "spl-token" | "spl-token-2022";
+export type SolanaTokenAccount = TokenAccount & {
+  state?: TokenAccountState;
+  tokenProgram?: SolanaTokenProgram;
+  extensions?: SolanaTokenAccountExtensions | undefined;
+};
+export type SolanaTokenAccountRaw = TokenAccountRaw & {
+  state?: TokenAccountState;
+  tokenProgram?: SolanaTokenProgram;
+  extensions?: string;
+};
 
 export type TransactionStatus = TransactionStatusCommon;
 
@@ -293,4 +336,9 @@ export type SolanaOperationExtra = {
 export type SolanaOperationExtraRaw = {
   memo?: string | undefined;
   stake?: ExtraStakeInfoRaw;
+};
+
+export type SolanaExtraDeviceTransactionField = {
+  type: "solana.token.transferFee";
+  label: string;
 };

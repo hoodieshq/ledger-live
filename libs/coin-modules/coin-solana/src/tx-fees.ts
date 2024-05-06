@@ -204,6 +204,7 @@ const createDummyTokenTransferTx = (address: string): Transaction => {
             tokenAccAddress: randomAddresses[2],
             shouldCreateAsAssociatedTokenAccount: true,
           },
+          tokenProgram: "spl-token",
         },
         ...commandDescriptorCommons,
       },

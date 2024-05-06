@@ -2,7 +2,7 @@ import React from "react";
 import { Trans } from "react-i18next";
 import { SubAccount } from "@ledgerhq/types-live";
 import { Box, Alert, Text } from "@ledgerhq/native-ui";
-import { isTokenAccountFrozen } from "@ledgerhq/live-common/families/solana/logic";
+import { isTokenAccountFrozen } from "@ledgerhq/live-common/families/solana/token";
 import { SolanaAccount, SolanaTokenAccount } from "@ledgerhq/live-common/families/solana/types";
 import AccountSubHeader from "~/components/AccountSubHeader";
 
