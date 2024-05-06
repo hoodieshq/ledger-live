@@ -1,6 +1,17 @@
 /* eslint-disable @typescript-eslint/no-redeclare */
 
-import { enums, type, Infer, number, string, optional, array, nullable, union } from "superstruct";
+import {
+  enums,
+  type,
+  Infer,
+  number,
+  string,
+  optional,
+  array,
+  nullable,
+  union,
+  assign,
+} from "superstruct";
 import { PublicKeyFromString } from "../../validators/pubkey";
 
 export type TokenAmountUi = Infer<typeof TokenAmountUi>;
@@ -18,11 +29,32 @@ const InitializeMint = type({
   freezeAuthority: optional(PublicKeyFromString),
 });
 
+const InitializeMint2 = type({
+  decimals: number(),
+  freezeAuthority: PublicKeyFromString,
+  freezeAuthorityOption: optional(number()),
+  mint: PublicKeyFromString,
+  mintAuthority: PublicKeyFromString,
+});
+
 const InitializeAccount = type({
   account: PublicKeyFromString,
   mint: PublicKeyFromString,
   owner: PublicKeyFromString,
   rentSysvar: PublicKeyFromString,
+});
+
+const InitializeAccount2 = type({
+  account: PublicKeyFromString,
+  mint: PublicKeyFromString,
+  owner: PublicKeyFromString,
+  rentSysvar: PublicKeyFromString,
+});
+
+const InitializeAccount3 = type({
+  account: PublicKeyFromString,
+  mint: PublicKeyFromString,
+  owner: PublicKeyFromString,
 });
 
 const InitializeMultisig = type({
@@ -123,6 +155,9 @@ export const TransferChecked = type({
   tokenAmount: TokenAmountUi,
 });
 
+export type TransferCheckedWithFee = Infer<typeof TransferCheckedWithFee>;
+export const TransferCheckedWithFee = assign(type({ feeAmount: TokenAmountUi }), TransferChecked);
+
 const ApproveChecked = type({
   source: PublicKeyFromString,
   mint: PublicKeyFromString,
@@ -151,10 +186,75 @@ const BurnChecked = type({
   tokenAmount: TokenAmountUi,
 });
 
+const SyncNative = type({
+  account: PublicKeyFromString,
+});
+
+const GetAccountDataSize = type({
+  extensionTypes: optional(array(string())),
+  mint: PublicKeyFromString,
+});
+
+const InitializeImmutableOwner = type({
+  account: PublicKeyFromString,
+});
+
+const AmountToUiAmount = type({
+  amount: union([string(), number()]),
+  mint: PublicKeyFromString,
+});
+
+const UiAmountToAmount = type({
+  mint: PublicKeyFromString,
+  uiAmount: string(),
+});
+
+const InitializeMintCloseAuthority = type({
+  mint: PublicKeyFromString,
+  newAuthority: PublicKeyFromString,
+});
+
+const TransferFeeExtension = type({
+  maximumFee: number(),
+  mint: PublicKeyFromString,
+  transferFeeBasisPoints: number(),
+  transferFeeConfigAuthority: PublicKeyFromString,
+  withdrawWitheldAuthority: PublicKeyFromString,
+});
+
+const DefaultAccountStateExtension = type({
+  accountState: string(),
+  freezeAuthority: optional(PublicKeyFromString),
+  mint: PublicKeyFromString,
+});
+
+const Reallocate = type({
+  account: PublicKeyFromString,
+  extensionTypes: array(string()),
+  payer: PublicKeyFromString,
+  systemProgram: PublicKeyFromString,
+});
+
+const MemoTransferExtension = type({
+  account: PublicKeyFromString,
+  multisigOwner: optional(PublicKeyFromString),
+  owner: optional(PublicKeyFromString),
+  signers: optional(array(PublicKeyFromString)),
+});
+
+const CreateNativeMint = type({
+  nativeMint: PublicKeyFromString,
+  payer: PublicKeyFromString,
+  systemProgram: PublicKeyFromString,
+});
+
 export type TokenInstructionType = Infer<typeof TokenInstructionType>;
 export const TokenInstructionType = enums([
   "initializeMint",
+  "initializeMint2",
   "initializeAccount",
+  "initializeAccount2",
+  "initializeAccount3",
   "initializeMultisig",
   "transfer",
   "approve",
@@ -173,50 +273,92 @@ export const TokenInstructionType = enums([
   "approveChecked",
   "mintToChecked",
   "burnChecked",
+  "syncNative",
+  "getAccountDataSize",
+  "amountToUiAmount",
+  "initializeImmutableOwner",
+  "uiAmountToAmount",
+  "initializeMintCloseAuthority",
+  "transferFeeExtension",
+  "defaultAccountStateExtension",
+  "reallocate",
+  "memoTransferExtension",
+  "createNativeMint",
+  "transferCheckedWithFee",
 ]);
 
 export const IX_STRUCTS = {
-  initializeMint: InitializeMint,
-  initializeAccount: InitializeAccount,
-  initializeMultisig: InitializeMultisig,
-  transfer: Transfer,
+  amountToUiAmount: AmountToUiAmount,
   approve: Approve,
+  approve2: ApproveChecked,
+  approveChecked: ApproveChecked,
+  burn: Burn,
+  burn2: BurnChecked,
+  burnChecked: BurnChecked,
+  closeAccount: CloseAccount,
+  createNativeMint: CreateNativeMint,
+  defaultAccountStateExtension: DefaultAccountStateExtension,
+  freezeAccount: FreezeAccount,
+  getAccountDataSize: GetAccountDataSize,
+  initializeAccount: InitializeAccount,
+  initializeAccount2: InitializeAccount2,
+  initializeAccount3: InitializeAccount3,
+  initializeImmutableOwner: InitializeImmutableOwner,
+  initializeMint: InitializeMint,
+  initializeMint2: InitializeMint2,
+  initializeMintCloseAuthority: InitializeMintCloseAuthority,
+  initializeMultisig: InitializeMultisig,
+  memoTransferExtension: MemoTransferExtension,
+  mintTo: MintTo,
+  mintTo2: MintToChecked,
+  mintToChecked: MintToChecked,
+  reallocate: Reallocate,
   revoke: Revoke,
   setAuthority: SetAuthority,
-  mintTo: MintTo,
-  burn: Burn,
-  closeAccount: CloseAccount,
-  freezeAccount: FreezeAccount,
+  syncNative: SyncNative,
   thawAccount: ThawAccount,
+  transfer: Transfer,
   transfer2: TransferChecked,
-  approve2: ApproveChecked,
-  mintTo2: MintToChecked,
-  burn2: BurnChecked,
   transferChecked: TransferChecked,
-  approveChecked: ApproveChecked,
-  mintToChecked: MintToChecked,
-  burnChecked: BurnChecked,
+  transferCheckedWithFee: TransferCheckedWithFee,
+  transferFeeExtension: TransferFeeExtension,
+  uiAmountToAmount: UiAmountToAmount,
 };
 
 export const IX_TITLES = {
-  initializeMint: "Initialize Mint",
-  initializeAccount: "Initialize Account",
-  initializeMultisig: "Initialize Multisig",
-  transfer: "Transfer",
+  amountToUiAmount: "Amount To UiAmount",
   approve: "Approve",
+  approve2: "Approve (Checked)",
+  approveChecked: "Approve (Checked)",
+  burn: "Burn",
+  burn2: "Burn (Checked)",
+  burnChecked: "Burn (Checked)",
+  closeAccount: "Close Account",
+  createNativeMint: "Create Native Mint",
+  defaultAccountStateExtension: "Default Account State Extension",
+  freezeAccount: "Freeze Account",
+  getAccountDataSize: "Get Account Data Size",
+  initializeAccount: "Initialize Account",
+  initializeAccount2: "Initialize Account (2)",
+  initializeAccount3: "Initialize Account (3)",
+  initializeImmutableOwner: "Initialize Immutable Owner",
+  initializeMint: "Initialize Mint",
+  initializeMint2: "Initialize Mint (2)",
+  initializeMintCloseAuthority: "Initialize Mint Close Authority",
+  initializeMultisig: "Initialize Multisig",
+  memoTransferExtension: "Memo Transfer Extension",
+  mintTo: "Mint To",
+  mintTo2: "Mint To (Checked)",
+  mintToChecked: "Mint To (Checked)",
+  reallocate: "Reallocate",
   revoke: "Revoke",
   setAuthority: "Set Authority",
-  mintTo: "Mint To",
-  burn: "Burn",
-  closeAccount: "Close Account",
-  freezeAccount: "Freeze Account",
+  syncNative: "Sync Native",
   thawAccount: "Thaw Account",
+  transfer: "Transfer",
   transfer2: "Transfer (Checked)",
-  approve2: "Approve (Checked)",
-  mintTo2: "Mint To (Checked)",
-  burn2: "Burn (Checked)",
   transferChecked: "Transfer (Checked)",
-  approveChecked: "Approve (Checked)",
-  mintToChecked: "Mint To (Checked)",
-  burnChecked: "Burn (Checked)",
+  transferCheckedWithFee: "Tramsfer with fee (Checked)",
+  transferFeeExtension: "Transfer Fee Extension",
+  uiAmountToAmount: "UiAmount To Amount",
 };
