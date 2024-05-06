@@ -36,6 +36,11 @@ type ParsedProgram =
       instruction: TokenInstructionDescriptor;
     }
   | {
+      program: "spl-token-2022";
+      title: string;
+      instruction: TokenInstructionDescriptor;
+    }
+  | {
       program: "unknown";
       title: "Unknown";
       instruction: undefined;
@@ -86,6 +91,15 @@ export const parse = (ix: ParsedInstruction | PartiallyDecodedInstruction): Pars
         return {
           program,
           title: "Token",
+          instruction: parseSplTokenInstruction({
+            ...ix,
+            program,
+          }),
+        };
+      case "spl-token-2022":
+        return {
+          program,
+          title: "Token2022",
           instruction: parseSplTokenInstruction({
             ...ix,
             program,
