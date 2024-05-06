@@ -86,7 +86,7 @@ export function getChainAPI(
     logger === undefined
       ? undefined
       : (url, options, fetch) => {
-          logger(url, options);
+          logger(url.toString(), options);
           fetch(url, options);
         };
 

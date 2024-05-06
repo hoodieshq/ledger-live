@@ -343,27 +343,16 @@ export function buildStakeSplitInstructions({
   amount,
   splitStakeAccAddr,
 }: StakeSplitCommand): TransactionInstruction[] {
-  // HACK: switch to split_with_seed when supported by @solana/web3.js
-  const splitIx = StakeProgram.split({
+  const splitIx = StakeProgram.splitWithSeed({
     authorizedPubkey: new PublicKey(authorizedAccAddr),
     lamports: amount,
     stakePubkey: new PublicKey(stakeAccAddr),
     splitStakePubkey: new PublicKey(splitStakeAccAddr),
-  }).instructions[1];
-
-  if (splitIx === undefined) {
-    throw new Error("expected split instruction");
-  }
-
-  const allocateIx = SystemProgram.allocate({
-    accountPubkey: new PublicKey(splitStakeAccAddr),
     basePubkey: new PublicKey(authorizedAccAddr),
-    programId: StakeProgram.programId,
     seed,
-    space: StakeProgram.space,
   });
 
-  return [allocateIx, splitIx];
+  return splitIx.instructions;
 }
 
 export function buildStakeCreateAccountInstructions({
