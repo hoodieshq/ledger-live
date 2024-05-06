@@ -1,21 +1,29 @@
 import {
+  TOKEN_2022_PROGRAM_ID,
+  createAmountToUiAmountInstruction,
   createAssociatedTokenAccountInstruction,
   createTransferCheckedInstruction,
+  createTransferCheckedWithTransferHookInstruction,
   getAssociatedTokenAddress,
 } from "@solana/spl-token";
 import {
+  AccountInfo,
   ConfirmedSignatureInfo,
   Connection,
+  ParsedAccountData,
   ParsedTransactionWithMeta,
   PublicKey,
   StakeProgram,
   SystemProgram,
   TransactionInstruction,
+  TransactionMessage,
+  VersionedTransaction,
 } from "@solana/web3.js";
 import chunk from "lodash/chunk";
 import { ChainAPI } from ".";
 import { Awaited } from "../../logic";
 import {
+  SolanaTokenProgram,
   StakeCreateAccountCommand,
   StakeDelegateCommand,
   StakeSplitCommand,
@@ -27,10 +35,12 @@ import {
 } from "../../types";
 import { drainSeqAsyncGen } from "../../utils";
 import { parseTokenAccountInfo, tryParseAsTokenAccount, tryParseAsVoteAccount } from "./account";
-import { parseStakeAccountInfo } from "./account/parser";
+import { parseStakeAccountInfo, tryParseAsMintAccount } from "./account/parser";
 import { StakeAccountInfo } from "./account/stake";
-import { TokenAccountInfo } from "./account/token";
+import { MintAccountInfo, TokenAccountInfo } from "./account/token";
 import { VoteAccountInfo } from "./account/vote";
+import BigNumber from "bignumber.js";
+import { getTokenAccountProgramId } from "../../helpers/token";
 
 const MEMO_PROGRAM_ID = "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr";
 
@@ -45,6 +55,11 @@ type ParsedOnChainStakeAccount = Awaited<
 export type ParsedOnChainTokenAccountWithInfo = {
   onChainAcc: ParsedOnChainTokenAccount;
   info: TokenAccountInfo;
+};
+
+export type ParsedOnChainMintWithInfo = {
+  onChainAcc: AccountInfo<ParsedAccountData>;
+  info: MintAccountInfo;
 };
 
 export type ParsedOnChainStakeAccountWithInfo = {
@@ -156,9 +171,10 @@ export const buildTransferInstructions = ({
   return instructions;
 };
 
-export const buildTokenTransferInstructions = (
+export const buildTokenTransferInstructions = async (
   command: TokenTransferCommand,
-): TransactionInstruction[] => {
+  api: ChainAPI,
+): Promise<TransactionInstruction[]> => {
   const {
     ownerAddress,
     ownerAssociatedTokenAccountAddress,
@@ -167,6 +183,8 @@ export const buildTokenTransferInstructions = (
     mintAddress,
     mintDecimals,
     memo,
+    tokenProgram,
+    extensions,
   } = command;
   const ownerPubkey = new PublicKey(ownerAddress);
 
@@ -178,6 +196,8 @@ export const buildTokenTransferInstructions = (
 
   const mintPubkey = new PublicKey(mintAddress);
 
+  const programId = getTokenAccountProgramId(tokenProgram);
+
   if (recipientDescriptor.shouldCreateAsAssociatedTokenAccount) {
     instructions.push(
       createAssociatedTokenAccountInstruction(
@@ -185,20 +205,39 @@ export const buildTokenTransferInstructions = (
         destinationPubkey,
         destinationOwnerPubkey,
         mintPubkey,
+        programId,
       ),
     );
   }
 
-  instructions.push(
-    createTransferCheckedInstruction(
-      new PublicKey(ownerAssociatedTokenAccountAddress),
-      mintPubkey,
-      destinationPubkey,
-      ownerPubkey,
-      amount,
-      mintDecimals,
-    ),
-  );
+  const amountWithFee = extensions?.transferFee?.transferAmountIncludingFee;
+
+  const transferIx =
+    tokenProgram === "spl-token-2022"
+      ? await createTransferCheckedWithTransferHookInstruction(
+          api.connection,
+          new PublicKey(ownerAssociatedTokenAccountAddress),
+          mintPubkey,
+          destinationPubkey,
+          ownerPubkey,
+          BigInt(amountWithFee || amount),
+          mintDecimals,
+          undefined,
+          "confirmed",
+          programId,
+        )
+      : createTransferCheckedInstruction(
+          new PublicKey(ownerAssociatedTokenAccountAddress),
+          mintPubkey,
+          destinationPubkey,
+          ownerPubkey,
+          amount,
+          mintDecimals,
+          undefined,
+          programId,
+        );
+
+  instructions.push(transferIx);
 
   if (memo) {
     instructions.push(
@@ -216,11 +255,17 @@ export const buildTokenTransferInstructions = (
 export async function findAssociatedTokenAccountPubkey(
   ownerAddress: string,
   mintAddress: string,
+  tokenProgram: SolanaTokenProgram,
 ): Promise<PublicKey> {
   const ownerPubKey = new PublicKey(ownerAddress);
   const mintPubkey = new PublicKey(mintAddress);
 
-  return getAssociatedTokenAddress(mintPubkey, ownerPubKey);
+  return getAssociatedTokenAddress(
+    mintPubkey,
+    ownerPubKey,
+    undefined,
+    getTokenAccountProgramId(tokenProgram),
+  );
 }
 
 export const getMaybeTokenAccount = async (
@@ -246,6 +291,35 @@ export async function getMaybeVoteAccount(
   return voteAccount;
 }
 
+export const getMaybeTokenMint = async (
+  address: string,
+  api: ChainAPI,
+): Promise<ParsedOnChainMintWithInfo | undefined | Error> => {
+  const accInfo = await api.getAccountInfo(address);
+
+  if (!accInfo || !("parsed" in accInfo.data)) return undefined;
+
+  const mintOrError = tryParseAsMintAccount(accInfo.data);
+
+  if (!mintOrError || mintOrError instanceof Error) return mintOrError;
+
+  return {
+    info: mintOrError,
+    onChainAcc: accInfo as ParsedOnChainMintWithInfo["onChainAcc"],
+  };
+};
+
+export const getMaybeTokenMintProgram = async (
+  address: string,
+  api: ChainAPI,
+): Promise<SolanaTokenProgram | undefined | Error> => {
+  const mintInfo = await api.getAccountInfo(address);
+
+  return mintInfo !== null && "parsed" in mintInfo.data
+    ? (mintInfo?.data.program as SolanaTokenProgram)
+    : undefined;
+};
+
 export function getStakeAccountMinimumBalanceForRentExemption(api: ChainAPI) {
   return api.getMinimumBalanceForRentExemption(StakeProgram.space);
 }
@@ -255,6 +329,42 @@ export async function getAccountMinimumBalanceForRentExemption(api: ChainAPI, ad
   const accSpace = accInfo !== null && "parsed" in accInfo.data ? accInfo.data.space : 0;
 
   return api.getMinimumBalanceForRentExemption(accSpace);
+}
+
+// for tokens2022 with interest bearing extension
+export async function getTokenAccruedInterestDelta(
+  api: ChainAPI,
+  amount: BigNumber,
+  magnitude: number,
+  mint: string,
+  payerAddress: string,
+) {
+  const transaction = new VersionedTransaction(
+    new TransactionMessage({
+      instructions: [
+        createAmountToUiAmountInstruction(
+          new PublicKey(mint),
+          amount.toNumber(),
+          TOKEN_2022_PROGRAM_ID,
+        ),
+      ],
+      recentBlockhash: PublicKey.default.toString(),
+      payerKey: new PublicKey(payerAddress),
+    }).compileToV0Message(),
+  );
+  const { returnData } = (
+    await api.connection.simulateTransaction(transaction, {
+      sigVerify: false,
+      replaceRecentBlockhash: true,
+    })
+  ).value;
+
+  if (!returnData?.data) return null;
+
+  const accruedAmount = BigNumber(
+    Buffer.from(returnData.data[0], returnData.data[1]).toString("utf-8"),
+  ).multipliedBy(BigNumber(10).pow(magnitude));
+  return accruedAmount.minus(amount).abs().decimalPlaces(0, 1);
 }
 
 export async function getStakeAccountAddressWithSeed({

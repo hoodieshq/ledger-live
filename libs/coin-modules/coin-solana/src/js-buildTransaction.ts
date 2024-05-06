@@ -23,7 +23,7 @@ export const buildTransactionWithAPI = async (
   transaction: Transaction,
   api: ChainAPI,
 ): Promise<readonly [OnChainTransaction, (signature: Buffer) => OnChainTransaction]> => {
-  const instructions = buildInstructions(transaction);
+  const instructions = await buildInstructions(transaction, api);
 
   const recentBlockhash = await api.getLatestBlockhash();
 
@@ -46,7 +46,10 @@ export const buildTransactionWithAPI = async (
   ];
 };
 
-function buildInstructions(tx: Transaction): TransactionInstruction[] {
+async function buildInstructions(
+  tx: Transaction,
+  api: ChainAPI,
+): Promise<TransactionInstruction[]> {
   const { commandDescriptor } = tx.model;
   if (commandDescriptor === undefined) {
     throw new Error("missing command descriptor");
@@ -54,15 +57,18 @@ function buildInstructions(tx: Transaction): TransactionInstruction[] {
   if (Object.keys(commandDescriptor.errors).length > 0) {
     throw new Error("can not build invalid command");
   }
-  return buildInstructionsForCommand(commandDescriptor.command);
+  return buildInstructionsForCommand(commandDescriptor.command, api);
 }
 
-function buildInstructionsForCommand(command: Command): TransactionInstruction[] {
+async function buildInstructionsForCommand(
+  command: Command,
+  api: ChainAPI,
+): Promise<TransactionInstruction[]> {
   switch (command.kind) {
     case "transfer":
       return buildTransferInstructions(command);
     case "token.transfer":
-      return buildTokenTransferInstructions(command);
+      return buildTokenTransferInstructions(command, api);
     case "token.createATA":
       return buildCreateAssociatedTokenAccountInstruction(command);
     case "stake.createAccount":

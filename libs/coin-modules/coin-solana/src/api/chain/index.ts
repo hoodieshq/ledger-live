@@ -1,5 +1,6 @@
 import {
   TOKEN_PROGRAM_ID,
+  TOKEN_2022_PROGRAM_ID,
   getAssociatedTokenAddress,
   getMinimumBalanceForRentExemptAccount,
 } from "@solana/spl-token";
@@ -15,6 +16,8 @@ import {
 import { getEnv } from "@ledgerhq/live-env";
 import { Awaited } from "../../logic";
 import { NetworkError } from "@ledgerhq/errors";
+import { SolanaTokenProgram } from "../../types";
+import { getTokenAccountProgramId } from "../../helpers/token";
 
 export const LATEST_BLOCKHASH_MOCK = "EEbZs6DmDyDjucyYbo3LwVJU7pQYuVopYcYTSEZXskW3";
 
@@ -32,6 +35,10 @@ export type ChainAPI = Readonly<{
   getBalanceAndContext: (address: string) => ReturnType<Connection["getBalanceAndContext"]>;
 
   getParsedTokenAccountsByOwner: (
+    address: string,
+  ) => ReturnType<Connection["getParsedTokenAccountsByOwner"]>;
+
+  getParsedToken2022AccountsByOwner: (
     address: string,
   ) => ReturnType<Connection["getParsedTokenAccountsByOwner"]>;
 
@@ -62,7 +69,11 @@ export type ChainAPI = Readonly<{
 
   sendRawTransaction: (buffer: Buffer) => ReturnType<Connection["sendRawTransaction"]>;
 
-  findAssocTokenAccAddress: (owner: string, mint: string) => Promise<string>;
+  findAssocTokenAccAddress: (
+    owner: string,
+    mint: string,
+    program: SolanaTokenProgram,
+  ) => Promise<string>;
 
   getAssocTokenAccMinNativeBalance: () => Promise<number>;
 
@@ -71,6 +82,7 @@ export type ChainAPI = Readonly<{
   getEpochInfo: () => ReturnType<Connection["getEpochInfo"]>;
 
   config: Config;
+  connection: Connection;
 }>;
 
 // Naive mode, allow us to filter in sentry all this error comming from Sol RPC node
@@ -121,6 +133,13 @@ export function getChainAPI(
       connection()
         .getParsedTokenAccountsByOwner(new PublicKey(address), {
           programId: TOKEN_PROGRAM_ID,
+        })
+        .catch(remapErrors),
+
+    getParsedToken2022AccountsByOwner: (address: string) =>
+      connection()
+        .getParsedTokenAccountsByOwner(new PublicKey(address), {
+          programId: TOKEN_2022_PROGRAM_ID,
         })
         .catch(remapErrors),
 
@@ -184,8 +203,13 @@ export function getChainAPI(
       }).catch(remapErrors);
     },
 
-    findAssocTokenAccAddress: (owner: string, mint: string) => {
-      return getAssociatedTokenAddress(new PublicKey(mint), new PublicKey(owner))
+    findAssocTokenAccAddress: (owner: string, mint: string, program: SolanaTokenProgram) => {
+      return getAssociatedTokenAddress(
+        new PublicKey(mint),
+        new PublicKey(owner),
+        undefined,
+        getTokenAccountProgramId(program),
+      )
         .then(r => r.toBase58())
         .catch(remapErrors);
     },
@@ -199,5 +223,6 @@ export function getChainAPI(
     getEpochInfo: () => connection().getEpochInfo().catch(remapErrors),
 
     config,
+    connection: connection(),
   };
 }

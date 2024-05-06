@@ -9,7 +9,7 @@ import {
 import { getCryptoCurrencyById } from "@ledgerhq/cryptoassets";
 import BigNumber from "bignumber.js";
 import type { CryptoCurrency, TokenCurrency } from "@ledgerhq/types-cryptoassets";
-import { findSubAccountById } from "@ledgerhq/coin-framework/lib/account/helpers";
+import { findSubAccountById } from "@ledgerhq/coin-framework/account/index";
 
 function getMainCurrency(currency: CryptoCurrency) {
   if (currency.isTestnetFor !== undefined) {

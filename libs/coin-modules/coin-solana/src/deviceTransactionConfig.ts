@@ -1,9 +1,10 @@
 import BigNumber from "bignumber.js";
 import { formatCurrencyUnit } from "@ledgerhq/coin-framework/currencies/index";
-import type { CommonDeviceTransactionField as DeviceTransactionField } from "@ledgerhq/coin-framework/transaction/common";
+import type { CommonDeviceTransactionField } from "@ledgerhq/coin-framework/transaction/common";
 import type { Account, AccountLike } from "@ledgerhq/types-live";
 import type {
   CommandDescriptor,
+  SolanaExtraDeviceTransactionField,
   StakeCreateAccountCommand,
   StakeDelegateCommand,
   StakeSplitCommand,
@@ -17,6 +18,10 @@ import type {
 import { assertUnreachable } from "./utils";
 
 // do not show fields like 'To', 'Recipient', etc., as per Ledger policy
+
+type DeviceTransactionField = CommonDeviceTransactionField | SolanaExtraDeviceTransactionField;
+
+export type SolanaExtraDeviceFields = SolanaExtraDeviceTransactionField["type"];
 
 function getDeviceTransactionConfig({
   account,
@@ -102,6 +107,13 @@ function fieldsForTokenTransfer(command: TokenTransferCommand): DeviceTransactio
     type: "amount",
     label: "Transfer tokens",
   });
+
+  if (command.extensions?.transferFee && command.extensions.transferFee.feeBps > 0) {
+    fields.push({
+      type: "solana.token.transferFee",
+      label: "Transfer fee",
+    });
+  }
 
   fields.push({
     type: "address",
