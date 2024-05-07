@@ -8,6 +8,7 @@ import {
   Transaction,
   SolanaAccount,
 } from "@ledgerhq/live-common/families/solana/types";
+import { SolanaRecipientMemoIsRequired } from "@ledgerhq/live-common/families/solana/errors";
 
 type Props = {
   onChange: (t: Transaction) => void;
@@ -36,13 +37,19 @@ const MemoValueField = ({ onChange, account, transaction, status }: Props) => {
     },
     [onChange, transaction, bridge],
   );
+
+  const isRecipientMemoRequired = status?.errors?.memo instanceof SolanaRecipientMemoIsRequired;
   return transaction.model.kind === "transfer" || transaction.model.kind === "token.transfer" ? (
     <Input
       warning={status.warnings.memo}
       error={status.errors.memo}
       value={transaction.model.uiState.memo || ""}
       onChange={onMemoValueChange}
-      placeholder={t("families.solana.memoPlaceholder")}
+      placeholder={t(
+        isRecipientMemoRequired
+          ? "families.solana.requiredMemoPlaceholder"
+          : "families.solana.memoPlaceholder",
+      )}
     />
   ) : null;
 };
