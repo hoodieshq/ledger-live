@@ -5,6 +5,7 @@ import { Box, Alert, Text } from "@ledgerhq/native-ui";
 import { isTokenAccountFrozen } from "@ledgerhq/live-common/families/solana/token";
 import { SolanaAccount, SolanaTokenAccount } from "@ledgerhq/live-common/families/solana/types";
 import AccountSubHeader from "~/components/AccountSubHeader";
+import TokenExtensionsInfoBox from "./Token2022/TokenExtensionsInfoBox";
 
 type Account = SolanaAccount | SolanaTokenAccount | SubAccount;
 
@@ -13,10 +14,13 @@ type Props = {
 };
 
 function SolanaAccountSubHeader({ account }: Props) {
+  const tokenExtensions =
+    account.type === "TokenAccount" ? (account as SolanaTokenAccount)?.extensions : undefined;
   return (
     <>
+      <AccountSubHeader family="Solana" team="Solana Labs" />
       {isTokenAccountFrozen(account) && (
-        <Box mt={6}>
+        <Box mb={6}>
           <Alert type="warning">
             <Text variant="body">
               <Trans i18nKey="solana.token.frozenStateWarning" />
@@ -24,7 +28,12 @@ function SolanaAccountSubHeader({ account }: Props) {
           </Alert>
         </Box>
       )}
-      <AccountSubHeader family="Solana" team="Solana Labs" />
+      {!!tokenExtensions && (
+        <TokenExtensionsInfoBox
+          tokenAccount={account as SolanaTokenAccount}
+          extensions={tokenExtensions}
+        />
+      )}
     </>
   );
 }

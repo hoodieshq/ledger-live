@@ -75,7 +75,7 @@ function fieldsForTransfer(_command: TransferCommand): DeviceTransactionField[] 
   return fields;
 }
 
-function fieldsForTokenTransfer(_command: TokenTransferCommand): DeviceTransactionField[] {
+function fieldsForTokenTransfer(command: TokenTransferCommand): DeviceTransactionField[] {
   const fields: Array<DeviceTransactionField> = [];
 
   fields.push({
