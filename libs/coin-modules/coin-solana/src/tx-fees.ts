@@ -185,6 +185,32 @@ const createDummyTokenTransferTx = (address: string): Transaction => {
   };
 };
 
+const createDummyTokenTransferTx = (address: string): Transaction => {
+  return {
+    ...createTransaction({} as any),
+    model: {
+      kind: "token.transfer",
+      uiState: {} as any,
+      commandDescriptor: {
+        command: {
+          kind: "token.transfer",
+          amount: 0,
+          mintAddress: randomAddresses[0],
+          mintDecimals: 0,
+          ownerAddress: address,
+          ownerAssociatedTokenAccountAddress: randomAddresses[1],
+          recipientDescriptor: {
+            walletAddress: randomAddresses[1],
+            tokenAccAddress: randomAddresses[2],
+            shouldCreateAsAssociatedTokenAccount: true,
+          },
+        },
+        ...commandDescriptorCommons,
+      },
+    },
+  };
+};
+
 const commandDescriptorCommons = {
   errors: {},
   fee: 0,
