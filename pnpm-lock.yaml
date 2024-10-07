@@ -2674,8 +2674,8 @@ importers:
         specifier: ^7.8.1
         version: 7.8.1
       superstruct:
-        specifier: 0.14.2
-        version: 0.14.2
+        specifier: 0.16.7
+        version: 0.16.7
     devDependencies:
       '@faker-js/faker':
         specifier: ^8.4.1
@@ -28059,6 +28059,10 @@ packages:
 
   superstruct@0.14.2:
     resolution: {integrity: sha512-nPewA6m9mR3d6k7WkZ8N8zpTWfenFH3q9pA2PkuiZxINr9DKB2+40wEQf0ixn8VaGuJ78AB6iWOtStI+/4FKZQ==}
+
+  superstruct@0.16.7:
+    resolution: {integrity: sha512-4ZZTrXlP4XzCrgh4vOfPDL6dL7zZm5aPl78eczwFSrwvxtsEnKRrSGID6Sbt0agycUoo4auRdWSNTX+oQ3KFyA==}
+    engines: {node: '>=14.0.0'}
 
   superstruct@0.6.2:
     resolution: {integrity: sha512-lvA97MFAJng3rfjcafT/zGTSWm6Tbpk++DP6It4Qg7oNaeM+2tdJMuVgGje21/bIpBEs6iQql1PJH6dKTjl4Ig==}
@@ -62882,6 +62886,8 @@ snapshots:
       - supports-color
 
   superstruct@0.14.2: {}
+
+  superstruct@0.16.7: {}
 
   superstruct@0.6.2:
     dependencies:

@@ -206,7 +206,7 @@ type AlertType =
   | "update"
   | "twitter";
 
-type Props = BoxProps & {
+type Props = Omit<BoxProps, "right" | "left"> & {
   type?: AlertType;
   children?: React.ReactNode;
   onLearnMore?: () => void;
