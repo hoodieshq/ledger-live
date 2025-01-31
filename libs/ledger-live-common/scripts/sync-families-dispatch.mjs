@@ -41,6 +41,7 @@ const familiesWPackage = [
   "tron",
   "vechain",
   "xrp",
+  "sui",
 ];
 
 cd(path.join(__dirname, "..", "src"));
