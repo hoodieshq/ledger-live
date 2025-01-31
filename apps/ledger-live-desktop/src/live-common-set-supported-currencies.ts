@@ -99,4 +99,6 @@ setSupportedCurrencies([
   "zksync_sepolia",
   "mantra",
   "xion",
+  "sui",
+  "sui_testnet",
 ]);

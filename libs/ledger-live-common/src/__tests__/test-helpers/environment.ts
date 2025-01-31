@@ -107,6 +107,8 @@ setSupportedCurrencies([
   "aptos",
   "aptos_testnet",
   "xion",
+  "sui",
+  "sui_testnet",
 ]);
 LiveConfig.setConfig(liveConfig);
 
