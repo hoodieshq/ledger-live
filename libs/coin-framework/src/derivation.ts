@@ -500,7 +500,6 @@ export function walletDerivation<R>({
             : runDerivationScheme(derivationScheme, currency, {
                 account: index,
               });
-          console.log("path", path, index);
           return derivateAddress({
             currency,
             path,
