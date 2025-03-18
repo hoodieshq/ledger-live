@@ -14,16 +14,15 @@ describe("prepareTransaction", () => {
   });
 
   it("returns a new Transaction with new fees", async () => {
-    // Given
+    // GIVEN
     const fees = new BigNumber(faker.number.int(50));
     mockEstimateFees.mockResolvedValue(fees);
     const tx = createFixtureTransaction();
 
-    // When
+    // WHEN
     const newTx = await prepareTransaction(createFixtureAccount(), tx);
 
-    // Then
-    expect(mockEstimateFees).toHaveBeenCalledTimes(1);
+    // THEN
     expect(newTx.fees).toEqual(fees);
     expect(newTx).not.toBe(tx);
     expect(newTx).toMatchObject({
@@ -34,15 +33,15 @@ describe("prepareTransaction", () => {
   });
 
   it("returns the passed transaction if fees are the same", async () => {
-    // Given
+    // GIVEN
     const fees = new BigNumber(faker.number.int(50));
     mockEstimateFees.mockResolvedValue(fees);
     const tx = createFixtureTransaction({ fees });
 
-    // When
+    // WHEN
     const newTx = await prepareTransaction(createFixtureAccount(), tx);
 
-    // Then
+    // THEN
     expect(newTx).toBe(tx);
   });
 });

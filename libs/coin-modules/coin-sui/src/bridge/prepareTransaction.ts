@@ -2,7 +2,7 @@ import { AccountBridge } from "@ledgerhq/types-live";
 import { updateTransaction } from "@ledgerhq/coin-framework/bridge/jsHelpers";
 import type { SuiAccount, Transaction } from "../types";
 import { estimateMaxSpendable } from "./estimateMaxSpendable";
-import getEstimatedFees from "./getFeesForTransaction";
+import getFeesForTransaction from "./getFeesForTransaction";
 import BigNumber from "bignumber.js";
 
 /**
@@ -25,7 +25,7 @@ export const prepareTransaction: AccountBridge<
 
   let fees: BigNumber;
   try {
-    fees = await getEstimatedFees({
+    fees = await getFeesForTransaction({
       account,
       transaction,
     });

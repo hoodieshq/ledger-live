@@ -41,7 +41,7 @@ async function withApi<T>(execute: AsyncApiFunction<T>) {
   return result;
 }
 
-const getBalanceCached = makeLRUCache(
+export const getBalanceCached = makeLRUCache(
   ({ api, owner }: { api: SuiClient; owner: string }) => api.getBalance({ owner }),
   (params: { api: SuiClient; owner: string }) => params.owner,
   minutes(1),
@@ -62,28 +62,28 @@ export const getAccount = async (addr: string) =>
 /**
  * Returns true if account is the signer
  */
-function isSender(addr: string, transaction?: TransactionBlockData): boolean {
+export function isSender(addr: string, transaction?: TransactionBlockData): boolean {
   return transaction?.sender === ensureAddressFormat(addr);
 }
 
 /**
  * Map transaction to an Operation Type
  */
-function getOperationType(addr: string, transaction?: TransactionBlockData): OperationType {
+export function getOperationType(addr: string, transaction?: TransactionBlockData): OperationType {
   return isSender(addr, transaction) ? "OUT" : "IN";
 }
 
 /**
  * Extract senders from transaction
  */
-const getOperationSenders = (transaction?: TransactionBlockData): string[] => {
+export const getOperationSenders = (transaction?: TransactionBlockData): string[] => {
   return transaction?.sender ? [transaction?.sender] : [];
 };
 
 /**
  * Extract recipients from transaction
  */
-const getOperationRecipients = (transaction?: TransactionBlockData): string[] => {
+export const getOperationRecipients = (transaction?: TransactionBlockData): string[] => {
   if (transaction?.transaction.kind === "ProgrammableTransaction") {
     if (!transaction?.transaction?.inputs) return [];
     const recipients: string[] = [];
@@ -100,7 +100,7 @@ const getOperationRecipients = (transaction?: TransactionBlockData): string[] =>
 /**
  * Extract value from transaction
  */
-const getOperationAmount = (
+export const getOperationAmount = (
   address: string,
   transaction: SuiTransactionBlockResponse,
 ): BigNumber => {
@@ -125,7 +125,7 @@ const getOperationAmount = (
 /**
  * Extract fee from transaction
  */
-const getOperationFee = (transaction: SuiTransactionBlockResponse): BigNumber => {
+export const getOperationFee = (transaction: SuiTransactionBlockResponse): BigNumber => {
   const gas = transaction.effects!.gasUsed;
 
   const computationCost = BigNumber(gas.computationCost);
@@ -138,14 +138,14 @@ const getOperationFee = (transaction: SuiTransactionBlockResponse): BigNumber =>
 /**
  * Extract date from transaction
  */
-const getOperationDate = (transaction: SuiTransactionBlockResponse): Date => {
+export const getOperationDate = (transaction: SuiTransactionBlockResponse): Date => {
   return new Date(parseInt(transaction.timestampMs!));
 };
 
 /**
  * Map the Sui history transaction to a Ledger Live Operation
  */
-function transactionToOperation(
+export function transactionToOperation(
   accountId: string,
   address: string,
   transaction: SuiTransactionBlockResponse,
@@ -225,9 +225,10 @@ export const createTransaction = async (address: string, transaction: CreateExtr
     return tx.build({ client: api });
   });
 
-export const executeTransactionBlock = async (params: ExecuteTransactionBlockParams) => {
-  return api?.executeTransactionBlock(params);
-};
+export const executeTransactionBlock = async (params: ExecuteTransactionBlockParams) =>
+  withApi(async api => {
+    return api.executeTransactionBlock(params);
+  });
 
 // load from curos point or from begining until we reach the end
 const loadOperation = async (params: {

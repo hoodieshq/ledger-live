@@ -17,18 +17,18 @@ describe("getEstimatedFees", () => {
   });
 
   it("returns fees estimation by sui sdk", async () => {
-    // Given
+    // GIVEN
     const account = createFixtureAccount();
     const gasBudget = BigInt("3976000");
     estimateFees.mockResolvedValue(gasBudget);
 
-    // When
+    // WHEN
     const result = await getEstimatedFees({
       account,
       transaction,
     });
 
-    // Then
+    // THEN
     expect(estimateFees).toHaveBeenCalledTimes(1);
     expect(estimateFees.mock.lastCall).not.toBeNull();
     expect(result.toString()).toEqual(gasBudget.toString());
