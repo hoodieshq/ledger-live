@@ -6,7 +6,7 @@ import {
   ExecuteTransactionBlockParams,
   TransactionEffects,
 } from "@mysten/sui/client";
-import { TransactionBlockData, SuiTransactionBlockResponse } from "@mysten/sui/client";
+import { TransactionBlockData, SuiTransactionBlockResponse, SuiCallArg } from "@mysten/sui/client";
 import { Transaction } from "@mysten/sui/transactions";
 import { BigNumber } from "bignumber.js";
 import type { Operation, OperationType } from "@ledgerhq/types-live";
@@ -87,9 +87,9 @@ export const getOperationRecipients = (transaction?: TransactionBlockData): stri
   if (transaction?.transaction.kind === "ProgrammableTransaction") {
     if (!transaction?.transaction?.inputs) return [];
     const recipients: string[] = [];
-    transaction.transaction.inputs.map(({ valueType, value }: any) => {
-      if (valueType === "address") {
-        recipients.push(value);
+    transaction.transaction.inputs.map((input: SuiCallArg) => {
+      if ("valueType" in input && input.valueType === "address") {
+        recipients.push(String(input.value));
       }
     });
     return recipients;
