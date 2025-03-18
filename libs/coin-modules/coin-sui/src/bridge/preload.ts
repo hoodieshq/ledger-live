@@ -7,7 +7,7 @@ const PRELOAD_MAX_AGE = 30 * 60 * 1000; // 30 minutes
 
 let currentPreloadedData: SuiPreloadData = {};
 
-function fromHydratePreloadData(_data: any): SuiPreloadData {
+function fromHydratePreloadData(_data: SuiPreloadData): SuiPreloadData {
   return {};
 }
 
@@ -39,7 +39,7 @@ export const preload = async (): Promise<SuiPreloadData> => {
   return {};
 };
 
-export const hydrate = (data: any) => {
+export const hydrate = (data: SuiPreloadData) => {
   const hydrated = fromHydratePreloadData(data);
 
   setSuiPreloadData(hydrated);
