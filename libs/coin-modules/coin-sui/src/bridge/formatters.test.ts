@@ -6,8 +6,6 @@ describe("formatters", () => {
       const result = fromOperationExtraRaw(undefined);
       expect(result).toEqual({});
     });
-
-    // Add more tests as needed
   });
 
   describe("toOperationExtraRaw", () => {
@@ -15,7 +13,5 @@ describe("formatters", () => {
       const result = toOperationExtraRaw(undefined);
       expect(result).toEqual({});
     });
-
-    // Add more tests as needed
   });
 });
