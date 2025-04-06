@@ -1,4 +1,5 @@
 import {
+  getFullnodeUrl,
   PaginatedTransactionResponse,
   QueryTransactionBlocksParams,
   SuiClient,
@@ -21,13 +22,15 @@ import { ensureAddressFormat } from "../utils";
 
 type AsyncApiFunction<T> = (api: SuiClient) => Promise<T>;
 
-const rpcUrl = getEnv("API_SUI_NODE_PROXY");
+const rpcUrl = getFullnodeUrl("testnet") || getEnv("API_SUI_NODE_PROXY");
 
 let api: SuiClient | null = null;
 
 const TRANSACTIONS_REQUEST_LIMIT = 100;
 
 const BLOCK_HEIGHT = 5; // sui has no block height metainfo, we use it simulate proper icon statuses in apps
+
+export const DEFAULT_COIN_TYPE = "0x2::sui::SUI";
 
 /**
  * Connects to Sui Api
@@ -42,7 +45,10 @@ async function withApi<T>(execute: AsyncApiFunction<T>) {
 }
 
 export const getBalanceCached = makeLRUCache(
-  ({ api, owner }: { api: SuiClient; owner: string }) => api.getBalance({ owner }),
+  ({ api, owner }: { api: SuiClient; owner: string }) =>
+    api.getAllBalances({
+      owner,
+    }),
   (params: { api: SuiClient; owner: string }) => params.owner,
   minutes(1),
 );
@@ -50,13 +56,23 @@ export const getBalanceCached = makeLRUCache(
 /**
  * Get account balance
  */
-export const getAccount = async (addr: string) =>
+export const getAccountBalances = async (addr: string) =>
   withApi(async api => {
     const balance = await getBalanceCached({ api, owner: addr });
-    return {
+    console.log(
+      "balance",
+      balance,
+      balance.map(({ coinType, totalBalance }) => ({
+        coinType,
+        blockHeight: BLOCK_HEIGHT * 2,
+        balance: BigNumber(totalBalance),
+      })),
+    );
+    return balance.map(({ coinType, totalBalance }) => ({
+      coinType,
       blockHeight: BLOCK_HEIGHT * 2,
-      balance: BigNumber(balance.totalBalance),
-    };
+      balance: BigNumber(totalBalance),
+    }));
   });
 
 /**

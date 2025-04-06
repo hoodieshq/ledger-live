@@ -1,10 +1,17 @@
-import { encodeAccountId } from "@ledgerhq/coin-framework/account/index";
+import BigNumber from "bignumber.js";
+import {
+  encodeAccountId,
+  encodeTokenAccountId,
+  emptyHistoryCache,
+} from "@ledgerhq/coin-framework/account/index";
 import {
   makeSync,
   mergeOps,
   type GetAccountShape,
 } from "@ledgerhq/coin-framework/bridge/jsHelpers";
-import { getAccount, getOperations } from "../network";
+import { findTokenById, getTokenById } from "@ledgerhq/cryptoassets/tokens";
+import { getAccountBalances, getOperations } from "../network";
+import { DEFAULT_COIN_TYPE } from "../network/sdk";
 import { SuiAccount } from "../types";
 import { OperationType, type Operation } from "@ledgerhq/types-live";
 
@@ -29,8 +36,6 @@ export const getAccountShape: GetAccountShape<SuiAccount> = async info => {
     derivationMode,
   });
 
-  const { blockHeight, balance } = await getAccount(address);
-
   // Merge new operations with the previously synced ones
   let operations: Operation[] = [];
   try {
@@ -45,12 +50,46 @@ export const getAccountShape: GetAccountShape<SuiAccount> = async info => {
   }
 
   operations.sort((a, b) => b.date.valueOf() - a.date.valueOf());
+
+  const accountBalances = await getAccountBalances(address);
+
+  const balance =
+    accountBalances.find(({ coinType }) => coinType === DEFAULT_COIN_TYPE)?.balance ?? BigNumber(0);
+  const subAccounts = accountBalances
+    .filter(({ coinType }) => coinType !== DEFAULT_COIN_TYPE)
+    .map(({ coinType, balance }) => {
+      const token = getTokenById(coinType);
+      console.log("token", token);
+      // const tokenBalance = BigNumber(balance).dividedBy(10 ** token.units[0].magnitude);
+      const tokenBalance = BigNumber(balance);
+      console.log("tokenBalance", tokenBalance, tokenBalance.toString());
+      return {
+        type: "TokenAccount" as const,
+        id: encodeTokenAccountId(accountId, findTokenById(coinType)!),
+        parentId: accountId,
+        token,
+        balance: tokenBalance,
+        spendableBalance: tokenBalance,
+        operationsCount: operations.length,
+        operations: operations,
+        creationDate: operations.length > 0 ? operations[operations.length - 1].date : new Date(),
+        blockHeight: 5,
+        pendingOperations:
+          (initialAccount?.subAccounts && initialAccount.subAccounts[0]?.pendingOperations) || [],
+        balanceHistoryCache:
+          (initialAccount?.subAccounts && initialAccount.subAccounts[0]?.balanceHistoryCache) ||
+          emptyHistoryCache,
+        swapHistory: [],
+      };
+    });
+
   const shape = {
     id: accountId,
     balance,
     spendableBalance: balance,
     operationsCount: operations.length,
-    blockHeight,
+    blockHeight: 5,
+    subAccounts,
     suiResources: {},
   };
   return { ...shape, operations };
