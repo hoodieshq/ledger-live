@@ -12,7 +12,7 @@ import {
 import { findTokenById, getTokenById } from "@ledgerhq/cryptoassets/tokens";
 import { getAccountBalances, getOperations } from "../network";
 import { DEFAULT_COIN_TYPE } from "../network/sdk";
-import { SuiAccount } from "../types";
+import { SuiOperationExtra, SuiAccount } from "../types";
 import { OperationType, type Operation } from "@ledgerhq/types-live";
 
 /**
@@ -52,36 +52,9 @@ export const getAccountShape: GetAccountShape<SuiAccount> = async info => {
   operations.sort((a, b) => b.date.valueOf() - a.date.valueOf());
 
   const accountBalances = await getAccountBalances(address);
-
   const balance =
     accountBalances.find(({ coinType }) => coinType === DEFAULT_COIN_TYPE)?.balance ?? BigNumber(0);
-  const subAccounts = accountBalances
-    .filter(({ coinType }) => coinType !== DEFAULT_COIN_TYPE)
-    .map(({ coinType, balance }) => {
-      const token = getTokenById(coinType);
-      console.log("token", token);
-      // const tokenBalance = BigNumber(balance).dividedBy(10 ** token.units[0].magnitude);
-      const tokenBalance = BigNumber(balance);
-      console.log("tokenBalance", tokenBalance, tokenBalance.toString());
-      return {
-        type: "TokenAccount" as const,
-        id: encodeTokenAccountId(accountId, findTokenById(coinType)!),
-        parentId: accountId,
-        token,
-        balance: tokenBalance,
-        spendableBalance: tokenBalance,
-        operationsCount: operations.length,
-        operations: operations,
-        creationDate: operations.length > 0 ? operations[operations.length - 1].date : new Date(),
-        blockHeight: 5,
-        pendingOperations:
-          (initialAccount?.subAccounts && initialAccount.subAccounts[0]?.pendingOperations) || [],
-        balanceHistoryCache:
-          (initialAccount?.subAccounts && initialAccount.subAccounts[0]?.balanceHistoryCache) ||
-          emptyHistoryCache,
-        swapHistory: [],
-      };
-    });
+  const subAccounts = buildSubAccounts({ accountId, accountBalances, operations, initialAccount });
 
   const shape = {
     id: accountId,
@@ -102,6 +75,56 @@ export const getAccountShape: GetAccountShape<SuiAccount> = async info => {
  * @returns {Promise<void>} A promise that resolves when synchronisation is complete.
  */
 export const sync = makeSync({ getAccountShape });
+
+function buildSubAccounts({
+  accountId,
+  accountBalances,
+  operations,
+  initialAccount,
+}: {
+  accountId: string;
+  accountBalances: {
+    coinType: string;
+    blockHeight: number;
+    balance: BigNumber;
+  }[];
+  operations: Operation[];
+  initialAccount?: SuiAccount | undefined;
+}) {
+  const subAccounts = accountBalances
+    .filter(({ coinType }) => coinType !== DEFAULT_COIN_TYPE)
+    .map(({ coinType, balance }) => {
+      const token = getTokenById(coinType);
+      console.log("token", token, "operations", operations);
+      const tokenBalance = BigNumber(balance);
+      console.log("tokenBalance", tokenBalance, tokenBalance.toString());
+      const tokenOperations = operations.filter(
+        ({ extra }) => (extra as SuiOperationExtra).coinType === token.id,
+      );
+      return {
+        type: "TokenAccount" as const,
+        id: encodeTokenAccountId(accountId, findTokenById(coinType)!),
+        parentId: accountId,
+        token,
+        balance: tokenBalance,
+        spendableBalance: tokenBalance,
+        operationsCount: tokenOperations.length,
+        operations: tokenOperations,
+        creationDate:
+          tokenOperations.length > 0
+            ? tokenOperations[tokenOperations.length - 1].date
+            : new Date(),
+        blockHeight: 5,
+        pendingOperations:
+          (initialAccount?.subAccounts && initialAccount.subAccounts[0]?.pendingOperations) || [],
+        balanceHistoryCache:
+          (initialAccount?.subAccounts && initialAccount.subAccounts[0]?.balanceHistoryCache) ||
+          emptyHistoryCache,
+        swapHistory: [],
+      };
+    });
+  return subAccounts;
+}
 
 function latestHash(operations: Operation[], type: OperationType) {
   return operations.find(el => type === el.type)?.blockHash ?? null;

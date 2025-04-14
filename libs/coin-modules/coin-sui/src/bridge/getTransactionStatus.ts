@@ -50,12 +50,12 @@ export const getTransactionStatus: AccountBridge<
       errors.recipient = new InvalidAddressBecauseDestinationIsAlsoSource();
     }
 
-    if (totalSpent.eq(0) && transaction.useAllAmount) {
-      errors.amount = new NotEnoughBalance();
-    }
-    if (totalSpent.gt(account.balance)) {
-      errors.amount = new NotEnoughBalance();
-    }
+    // if (totalSpent.eq(0) && transaction.useAllAmount) {
+    //   errors.amount = new NotEnoughBalance();
+    // }
+    // if (totalSpent.gt(account.balance)) {
+    //   errors.amount = new NotEnoughBalance();
+    // }
     if (!transaction.fees) {
       errors.fees = new FeeNotLoaded();
     }

@@ -159,6 +159,22 @@ export const getOperationDate = (transaction: SuiTransactionBlockResponse): Date
 };
 
 /**
+ * Extract operation coin type from transaction
+ */
+export const getOperationCoinType = (transaction: SuiTransactionBlockResponse): string => {
+  if (!transaction.balanceChanges) {
+    return "";
+  }
+  const tokenBalanceChanges = transaction.balanceChanges.filter(
+    ({ coinType }) => coinType !== "0x2::sui::SUI",
+  );
+  if (tokenBalanceChanges.length > 0) {
+    return tokenBalanceChanges[0].coinType;
+  }
+  return "";
+};
+
+/**
  * Map the Sui history transaction to a Ledger Live Operation
  */
 export function transactionToOperation(
@@ -167,14 +183,18 @@ export function transactionToOperation(
   transaction: SuiTransactionBlockResponse,
 ): Operation {
   const type = getOperationType(address, transaction.transaction?.data);
+  const coinType = getOperationCoinType(transaction);
   const hash = transaction.digest;
+  console.log("rawTransaction", transaction, "coinType", coinType);
   return {
     id: encodeOperationId(accountId, hash, type),
     accountId,
     blockHash: hash,
     blockHeight: BLOCK_HEIGHT,
     date: getOperationDate(transaction),
-    extra: {},
+    extra: {
+      coinType,
+    },
     fee: getOperationFee(transaction),
     hasFailed: transaction.effects?.status.status != "success",
     hash,
@@ -234,8 +254,16 @@ export const createTransaction = async (address: string, transaction: CreateExtr
   withApi(async api => {
     const tx = new Transaction();
     tx.setSender(ensureAddressFormat(address));
+    const tokenInfo = await api.getCoins({
+      owner: address,
+      coinType:
+        "0x40a47fcf45e73675f435f9990711ea444421654bf7f7dfa03ba142ba8f94c5d1::hoodies_token_9::HOODIES_TOKEN_9",
+    });
+    console.log("tx.gas", tx.gas, tokenInfo);
 
-    const [coin] = tx.splitCoins(tx.gas, [transaction.amount.toNumber()]);
+    const [coin] = tx.splitCoins(tokenInfo.data[0].coinObjectId ?? tx.gas, [
+      transaction.amount.toNumber(),
+    ]);
     tx.transferObjects([coin], transaction.recipient);
 
     return tx.build({ client: api });

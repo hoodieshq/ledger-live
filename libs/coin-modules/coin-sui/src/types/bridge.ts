@@ -65,6 +65,7 @@ export type SuiOperation = Operation<SuiOperationExtra>;
 export type SuiOperationRaw = OperationRaw<SuiOperationExtraRaw>;
 
 export type SuiOperationExtra = {
+  coinType?: string;
   transferAmount?: BigNumber;
 };
 export type SuiOperationExtraRaw = Record<string, string>;

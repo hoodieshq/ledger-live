@@ -5682,8 +5682,8 @@ importers:
   libs/ledgerjs/packages/hw-app-sui:
     dependencies:
       '@mysten/ledgerjs-hw-app-sui':
-        specifier: 0.4.2
-        version: 0.4.2
+        specifier: 0.5.0
+        version: 0.5.0
     devDependencies:
       '@ledgerhq/hw-transport-mocker':
         specifier: workspace:^
@@ -12499,8 +12499,8 @@ packages:
   '@mysten/bcs@1.3.0':
     resolution: {integrity: sha512-V3V9GwIXEiUS7y8hkCwH3oseWpxs75YOOtfy7xdfyAdSftlFpTYgj5elclwYx8pgHdzg7pHdy6no77LHYGQCaQ==}
 
-  '@mysten/ledgerjs-hw-app-sui@0.4.2':
-    resolution: {integrity: sha512-Ypcb7WHyno16RodUI9CFzHQg/Fy6xl+itgr1D4g7Rdo6sUWBKn83p9s9wldG6wvJv+d4QlilXz/HcEgqrlu5pA==}
+  '@mysten/ledgerjs-hw-app-sui@0.5.0':
+    resolution: {integrity: sha512-1isN9cUrixLG73uMOB08SamY7YnZ0jtzIUTTKjgbzvLv1/FucF27EOLYSAwItu6je+UW5FtVh3MtRWl8hBp9uQ==}
 
   '@mysten/sui@1.21.1':
     resolution: {integrity: sha512-HVrcqiUUSPToxbQtEgARFCnLr6FMkDHhhwWdy/urk8dqr8jnNZkU3Ppr6YUgg3vRE3sXPhuIjXOCEL6Wyq6Esw==}
@@ -39550,7 +39550,7 @@ snapshots:
     dependencies:
       bs58: 6.0.0
 
-  '@mysten/ledgerjs-hw-app-sui@0.4.2':
+  '@mysten/ledgerjs-hw-app-sui@0.5.0':
     dependencies:
       '@ledgerhq/hw-transport': 6.31.4
       fast-sha256: 1.3.0

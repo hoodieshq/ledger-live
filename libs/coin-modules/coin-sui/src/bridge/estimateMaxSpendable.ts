@@ -1,9 +1,11 @@
 import type { AccountBridge } from "@ledgerhq/types-live";
 import { getMainAccount } from "@ledgerhq/coin-framework/account/index";
+import type { AccountLike, Acc } from "@ledgerhq/types-live";
 import type { SuiAccount, Transaction } from "../types";
 import getFeesForTransaction from "./getFeesForTransaction";
 import createTransaction from "./createTransaction";
 import { BigNumber } from "bignumber.js";
+import { AnyKindOfDictionary } from "lodash";
 
 /**
  * Returns the maximum possible amount for transaction
@@ -21,19 +23,30 @@ export const estimateMaxSpendable: AccountBridge<Transaction>["estimateMaxSpenda
 }) => {
   try {
     const mainAccount = getMainAccount(account, parentAccount) as SuiAccount;
+    console.log(
+      "account",
+      account,
+      "parentAccount",
+      parentAccount,
+      "transaction",
+      transaction,
+      "mainAccount",
+      mainAccount,
+    );
 
     const estimatedTransaction = {
       ...createTransaction(account),
       ...transaction,
       useAllAmount: true,
     };
+
     const fees = await getFeesForTransaction({
       account: mainAccount,
       transaction: estimatedTransaction,
     });
 
-    let spendableBalance = mainAccount.spendableBalance;
-    if (fees) {
+    let spendableBalance = account.spendableBalance;
+    if (fees && account?.type == "Account") {
       spendableBalance = BigNumber.max(spendableBalance.minus(fees), 0);
     }
 
