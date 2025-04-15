@@ -44,7 +44,7 @@ async function withApi<T>(execute: AsyncApiFunction<T>) {
   return result;
 }
 
-export const getBalanceCached = makeLRUCache(
+export const getAllBalancesCached = makeLRUCache(
   ({ api, owner }: { api: SuiClient; owner: string }) =>
     api.getAllBalances({
       owner,
@@ -58,17 +58,17 @@ export const getBalanceCached = makeLRUCache(
  */
 export const getAccountBalances = async (addr: string) =>
   withApi(async api => {
-    const balance = await getBalanceCached({ api, owner: addr });
+    const balances = await getAllBalancesCached({ api, owner: addr });
     console.log(
       "balance",
-      balance,
-      balance.map(({ coinType, totalBalance }) => ({
+      balances,
+      balances.map(({ coinType, totalBalance }) => ({
         coinType,
         blockHeight: BLOCK_HEIGHT * 2,
         balance: BigNumber(totalBalance),
       })),
     );
-    return balance.map(({ coinType, totalBalance }) => ({
+    return balances.map(({ coinType, totalBalance }) => ({
       coinType,
       blockHeight: BLOCK_HEIGHT * 2,
       balance: BigNumber(totalBalance),
