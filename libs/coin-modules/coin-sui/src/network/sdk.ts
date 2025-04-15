@@ -259,7 +259,7 @@ export const createTransaction = async (address: string, transaction: CreateExtr
       coinType:
         "0x40a47fcf45e73675f435f9990711ea444421654bf7f7dfa03ba142ba8f94c5d1::hoodies_token_9::HOODIES_TOKEN_9",
     });
-    console.log("tx.gas", tx.gas, tokenInfo);
+    console.log("tx.gastransaction", tx.gas, tokenInfo, transaction);
 
     const [coin] = tx.splitCoins(tokenInfo.data[0].coinObjectId ?? tx.gas, [
       transaction.amount.toNumber(),

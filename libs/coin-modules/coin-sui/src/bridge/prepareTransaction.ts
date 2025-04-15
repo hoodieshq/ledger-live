@@ -18,7 +18,11 @@ export const prepareTransaction: AccountBridge<
   SuiAccount
 >["prepareTransaction"] = async (account, transaction) => {
   let amount = transaction.amount;
+
   const spendable = await estimateMaxSpendable({ account, transaction });
+
+  console.log("prepareTransaction", account, transaction, "spendable", spendable);
+
   if (transaction.useAllAmount) {
     amount = spendable;
   }

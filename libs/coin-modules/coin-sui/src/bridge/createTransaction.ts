@@ -1,6 +1,7 @@
 import { BigNumber } from "bignumber.js";
+import { AccountBridge, Account, TokenAccount } from "@ledgerhq/types-live";
 import type { Transaction } from "../types";
-import { AccountBridge, AccountLike, Account } from "@ledgerhq/types-live";
+import { DEFAULT_COIN_TYPE } from "../network/sdk";
 
 /**
  * Create an empty transaction
@@ -8,11 +9,13 @@ import { AccountBridge, AccountLike, Account } from "@ledgerhq/types-live";
  * @returns {Transaction}
  */
 export const createTransaction: AccountBridge<Transaction>["createTransaction"] = (
-  _account: AccountLike<Account>,
+  account: Account | TokenAccount,
 ) => {
+  console.log("createTransaction", account);
   const transaction: Transaction = {
     family: "sui" as const,
-    mode: "send",
+    mode: account.type === "TokenAccount" ? "token.send" : "send",
+    coinType: account.type === "TokenAccount" ? account.token.id : DEFAULT_COIN_TYPE,
     amount: new BigNumber(0),
     recipient: "",
     useAllAmount: false,

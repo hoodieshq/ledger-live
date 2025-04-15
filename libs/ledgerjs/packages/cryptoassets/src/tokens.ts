@@ -148,6 +148,7 @@ export function findTokenByTicker(ticker: string): TokenCurrency | undefined {
  *
  */
 export function findTokenById(id: string): TokenCurrency | undefined {
+  console.log("tokensById", tokensById);
   return tokensById[id];
 }
 

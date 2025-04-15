@@ -16,16 +16,30 @@ export const importSuiTokens = async (outputDir: string) => {
       [
         "0x5aa8257984a7b0425872391967b8dd78e94275d4854aabeb6f4d7d5e724d9255::hoodies_token::HOODIES_TOKEN",
         "HOODIES_TOKEN",
-        "HOODIES_TOKEN",
+        "HDS",
         "0x5aa8257984a7b0425872391967b8dd78e94275d4854aabeb6f4d7d5e724d9255::hoodies_token::HOODIES_TOKEN",
         6,
       ],
       [
         "0x40a47fcf45e73675f435f9990711ea444421654bf7f7dfa03ba142ba8f94c5d1::hoodies_token_9::HOODIES_TOKEN_9",
-        "HOODIES_TOKEN",
-        "HOODIES_TOKEN",
+        "HOODIES_TOKEN-9",
+        "HDS-9",
         "0x40a47fcf45e73675f435f9990711ea444421654bf7f7dfa03ba142ba8f94c5d1::hoodies_token_9::HOODIES_TOKEN_9",
         9,
+      ],
+      [
+        "0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC",
+        "USDC",
+        "USDC",
+        "0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC",
+        6,
+      ],
+      [
+        "0xaafb102dd0902f5055cadecd687fb5b71ca82ef0e0285d90afde828ec58ca96b::btc::BTC",
+        "Wrapped Bitcoin",
+        "sbWBTC",
+        "0xaafb102dd0902f5055cadecd687fb5b71ca82ef0e0285d90afde828ec58ca96b::btc::BTC",
+        8,
       ],
     ];
 

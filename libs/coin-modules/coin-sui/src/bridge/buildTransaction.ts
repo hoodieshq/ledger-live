@@ -17,5 +17,6 @@ export const extractExtrinsicArg = (
  * @param {Transaction} transaction
  */
 export const buildTransaction = async (account: SuiAccount, transaction: Transaction) => {
+  console.log("buildTransaction", account, transaction);
   return craftTransaction(account.freshAddress, extractExtrinsicArg(account, transaction));
 };
