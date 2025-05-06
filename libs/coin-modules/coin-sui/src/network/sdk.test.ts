@@ -1,6 +1,6 @@
 import { TransactionBlockData, SuiTransactionBlockResponse } from "@mysten/sui/client";
 import {
-  getAccount,
+  getAccountBalances,
   getOperationType,
   getOperationSenders,
   getOperationRecipients,
@@ -109,9 +109,9 @@ const mockTransaction = {
 };
 
 describe("SDK Functions", () => {
-  test("getAccount should return account balance", async () => {
+  test("getAccountBalances should return account balance", async () => {
     const address = "0x33444cf803c690db96527cec67e3c9ab512596f4ba2d4eace43f0b4f716e0164";
-    const balance = await getAccount(address);
+    const balance = await getAccountBalances(address);
     expect(balance).toHaveProperty("blockHeight");
     expect(balance).toHaveProperty("balance");
   });
@@ -137,6 +137,7 @@ describe("SDK Functions", () => {
 
   test("getOperationAmount should calculate amount correctly", () => {
     const address = "0x33444cf803c690db96527cec67e3c9ab512596f4ba2d4eace43f0b4f716e0164";
+    // @ts-ignore
     expect(getOperationAmount(address, mockTransaction as SuiTransactionBlockResponse)).toEqual(
       new BigNumber(0),
     );
@@ -197,6 +198,7 @@ describe("SDK Functions", () => {
       recipient: "0x33444cf803c690db96527cec67e3c9ab512596f4ba2d4eace43f0b4f716e0164",
       errors: {},
     };
+    // @ts-expect-error
     const tx = await createTransaction(address, transaction);
     expect(tx).toBeInstanceOf(Uint8Array);
   });

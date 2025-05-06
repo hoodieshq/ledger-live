@@ -17,6 +17,7 @@ import { estimateMaxSpendable } from "./estimateMaxSpendable";
 import { getTransactionStatus } from "./getTransactionStatus";
 import { getPreloadStrategy, hydrate, preload } from "./preload";
 import { prepareTransaction } from "./prepareTransaction";
+// import { updateTransaction } from "./updateTransaction";
 import { assignFromAccountRaw, assignToAccountRaw } from "./serialization";
 import { fromOperationExtraRaw, toOperationExtraRaw } from "./formatters";
 import { buildSignOperation } from "./signOperation";

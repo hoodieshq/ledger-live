@@ -5,6 +5,7 @@ import suiAPI from "../network";
 export type CreateExtrinsicArg = {
   mode: string;
   amount: BigNumber;
+  coinType: string;
   recipient: string;
   useAllAmount?: boolean | undefined;
 };

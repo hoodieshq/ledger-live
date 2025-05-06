@@ -15,6 +15,7 @@ import { tokens as mainnetTokens } from "./data/evm/1";
 import { tokens as bnbTokens } from "./data/evm/56";
 import filecoinTokens from "./data/filecoin-erc20";
 import spltokens, { SPLToken } from "./data/spl";
+import suitokens, { SuiToken } from "./data/sui";
 import { ERC20Token } from "./types";
 
 const emptyArray = [];
@@ -55,6 +56,8 @@ addTokens(jettonTokens.map(convertJettonToken));
 addTokens(filecoinTokens.map(convertERC20));
 // Solana tokens
 addTokens(spltokens.map(convertSplTokens));
+// Sui tokens
+addTokens(suitokens.map(convertSuiTokens));
 // Sonic
 addTokens(sonicTokens.map(convertERC20));
 
@@ -421,6 +424,26 @@ function convertSplTokens([id, network, name, symbol, address, decimals]: SPLTok
       {
         name,
         code: symbol,
+        magnitude: decimals,
+      },
+    ],
+  };
+}
+
+function convertSuiTokens([id, name, ticker, address, decimals]: SuiToken): TokenCurrency {
+  return {
+    type: "TokenCurrency",
+    id,
+    contractAddress: address,
+    parentCurrency: getCryptoCurrencyById("sui"),
+    name,
+    tokenType: "sui",
+    ticker,
+    disableCountervalue: false,
+    units: [
+      {
+        name,
+        code: ticker,
         magnitude: decimals,
       },
     ],

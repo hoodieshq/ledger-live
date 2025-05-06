@@ -12,11 +12,8 @@ import { Transaction } from "../types";
  * @returns {Promise<Object>} The operation with the hash of the transaction.
  */
 export const broadcast: AccountBridge<Transaction>["broadcast"] = async ({
-  signedOperation: { operation, rawData },
+  signedOperation: { operation, signature, rawData },
 }) => {
-  const hash = await logicBroadcast(
-    rawData!.unsigned as string,
-    rawData!.serializedSignature as string,
-  );
+  const hash = await logicBroadcast(rawData!.unsigned as Uint8Array, signature);
   return patchOperationWithHash(operation, hash);
 };

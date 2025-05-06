@@ -3,6 +3,7 @@ import type { Account, OperationType } from "@ledgerhq/types-live";
 import { encodeOperationId } from "@ledgerhq/coin-framework/operation";
 import {
   CommandDescriptor,
+  TokenTransferCommand,
   TransferCommand,
   SuiAccount,
   SuiOperation,
@@ -39,7 +40,8 @@ export const buildOptimisticOperation = (
 ): SuiOperation => {
   const commandDescriptor: CommandDescriptor = {
     command: {
-      kind: "transfer" as const,
+      // @ts-expect-error TODO: fix later
+      kind: transaction.mode,
       sender: account.freshAddress,
       recipient: transaction.recipient,
       amount: transaction.amount.toNumber(),
@@ -65,10 +67,11 @@ function buildOptimisticOperationForCommand(
 ): SuiOperation {
   const { command } = commandDescriptor;
   switch (command.kind) {
-    case "transfer":
+    case "send":
       return optimisticOpForTransfer(account, transaction, command, commandDescriptor);
+    case "token.send":
+      return optimisticOpForTokenTransfer(account, transaction, command, commandDescriptor);
     default:
-      // @ts-expect-error Seem like a bug in TS, remove once more commands are added
       return assertUnreachable(command);
   }
 }
@@ -80,10 +83,7 @@ function optimisticOpForTransfer(
   commandDescriptor: CommandDescriptor,
 ): SuiOperation {
   const type = MODE_TO_TYPE.default;
-  const value =
-    type === "OUT"
-      ? new BigNumber(transaction.amount).plus(commandDescriptor.fee)
-      : new BigNumber(commandDescriptor.fee);
+  const value = new BigNumber(transaction.amount).plus(commandDescriptor.fee);
   const extra = getExtra(type, account, transaction);
 
   const commons = optimisticOpcommons(commandDescriptor);
@@ -95,6 +95,34 @@ function optimisticOpForTransfer(
     senders: [account.freshAddress],
     recipients: [transaction.recipient].filter(Boolean),
     accountId: account.id,
+    date: new Date(),
+    extra,
+  };
+}
+
+function optimisticOpForTokenTransfer(
+  account: Account,
+  transaction: Transaction,
+  _command: TokenTransferCommand,
+  commandDescriptor: CommandDescriptor,
+): SuiOperation {
+  if (!transaction.subAccountId) {
+    throw new Error("sub account id is required for token transfer");
+  }
+
+  const type = MODE_TO_TYPE.default;
+  const value = new BigNumber(transaction.amount);
+  const extra = getExtra(type, account, transaction);
+
+  const commons = optimisticOpcommons(commandDescriptor);
+  return {
+    ...commons,
+    id: encodeOperationId(transaction.subAccountId, "", type),
+    type: "OUT",
+    value,
+    senders: [account.freshAddress],
+    recipients: [transaction.recipient].filter(Boolean),
+    accountId: transaction.subAccountId,
     date: new Date(),
     extra,
   };

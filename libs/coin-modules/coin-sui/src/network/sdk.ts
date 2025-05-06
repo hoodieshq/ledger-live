@@ -1,4 +1,5 @@
 import {
+  getFullnodeUrl,
   PaginatedTransactionResponse,
   QueryTransactionBlocksParams,
   SuiClient,
@@ -21,7 +22,7 @@ import { ensureAddressFormat } from "../utils";
 
 type AsyncApiFunction<T> = (api: SuiClient) => Promise<T>;
 
-const rpcUrl = getEnv("API_SUI_NODE_PROXY");
+const rpcUrl = getFullnodeUrl("testnet") || getEnv("API_SUI_NODE_PROXY");
 
 let api: SuiClient | null = null;
 
@@ -29,10 +30,12 @@ const TRANSACTIONS_REQUEST_LIMIT = 100;
 
 const BLOCK_HEIGHT = 5; // sui has no block height metainfo, we use it simulate proper icon statuses in apps
 
+export const DEFAULT_COIN_TYPE = "0x2::sui::SUI";
+
 /**
  * Connects to Sui Api
  */
-async function withApi<T>(execute: AsyncApiFunction<T>) {
+export async function withApi<T>(execute: AsyncApiFunction<T>) {
   if (!api) {
     api = new SuiClient({ url: rpcUrl });
   }
@@ -41,8 +44,11 @@ async function withApi<T>(execute: AsyncApiFunction<T>) {
   return result;
 }
 
-export const getBalanceCached = makeLRUCache(
-  ({ api, owner }: { api: SuiClient; owner: string }) => api.getBalance({ owner }),
+export const getAllBalancesCached = makeLRUCache(
+  ({ api, owner }: { api: SuiClient; owner: string }) =>
+    api.getAllBalances({
+      owner,
+    }),
   (params: { api: SuiClient; owner: string }) => params.owner,
   minutes(1),
 );
@@ -50,13 +56,14 @@ export const getBalanceCached = makeLRUCache(
 /**
  * Get account balance
  */
-export const getAccount = async (addr: string) =>
+export const getAccountBalances = async (addr: string) =>
   withApi(async api => {
-    const balance = await getBalanceCached({ api, owner: addr });
-    return {
+    const balances = await getAllBalancesCached({ api, owner: addr });
+    return balances.map(({ coinType, totalBalance }) => ({
+      coinType,
       blockHeight: BLOCK_HEIGHT * 2,
-      balance: BigNumber(balance.totalBalance),
-    };
+      balance: BigNumber(totalBalance),
+    }));
   });
 
 /**
@@ -103,6 +110,7 @@ export const getOperationRecipients = (transaction?: TransactionBlockData): stri
 export const getOperationAmount = (
   address: string,
   transaction: SuiTransactionBlockResponse,
+  coinType: string,
 ): BigNumber => {
   let amount = new BigNumber(0);
   if (!transaction?.balanceChanges) return amount;
@@ -113,9 +121,9 @@ export const getOperationAmount = (
       balanceChange.owner.AddressOwner === address
     ) {
       if (balanceChange.amount[0] === "-") {
-        amount = amount.minus(balanceChange.amount);
+        amount = balanceChange.coinType === coinType ? amount.minus(balanceChange.amount) : amount;
       } else {
-        amount = amount.plus(balanceChange.amount);
+        amount = balanceChange.coinType === coinType ? amount.plus(balanceChange.amount) : amount;
       }
     }
   }
@@ -143,6 +151,22 @@ export const getOperationDate = (transaction: SuiTransactionBlockResponse): Date
 };
 
 /**
+ * Extract operation coin type from transaction
+ */
+export const getOperationCoinType = (transaction: SuiTransactionBlockResponse): string => {
+  if (!transaction.balanceChanges) {
+    return "";
+  }
+  const tokenBalanceChanges = transaction.balanceChanges.filter(
+    ({ coinType }) => coinType !== DEFAULT_COIN_TYPE,
+  );
+  if (tokenBalanceChanges.length > 0) {
+    return tokenBalanceChanges[0].coinType;
+  }
+  return "";
+};
+
+/**
  * Map the Sui history transaction to a Ledger Live Operation
  */
 export function transactionToOperation(
@@ -151,23 +175,30 @@ export function transactionToOperation(
   transaction: SuiTransactionBlockResponse,
 ): Operation {
   const type = getOperationType(address, transaction.transaction?.data);
+
+  const coinType = getOperationCoinType(transaction);
   const hash = transaction.digest;
+
   return {
     id: encodeOperationId(accountId, hash, type),
     accountId,
     blockHash: hash,
     blockHeight: BLOCK_HEIGHT,
     date: getOperationDate(transaction),
-    extra: {},
+    extra: {
+      coinType,
+    },
     fee: getOperationFee(transaction),
     hasFailed: transaction.effects?.status.status != "success",
     hash,
     recipients: getOperationRecipients(transaction.transaction?.data),
     senders: getOperationSenders(transaction.transaction?.data),
     type,
-    value: getOperationAmount(address, transaction),
+    value: getOperationAmount(address, transaction, coinType),
   };
 }
+
+let test = 0;
 
 /**
  * Fetch operation list
@@ -179,6 +210,7 @@ export const getOperations = async (
   outCursor?: string | null | undefined,
 ): Promise<Operation[]> =>
   withApi(async api => {
+    test = 0;
     const sentOps = await loadOperation({ api, type: "OUT", addr, cursor: outCursor });
     const receivedOps = await loadOperation({ api, type: "IN", addr, cursor: inCursor });
     const rawTransactions = [...sentOps, ...receivedOps].sort(
@@ -202,7 +234,8 @@ export const paymentInfo = async (sender: string, fakeTransaction: TransactionTy
   withApi(async api => {
     const tx = new Transaction();
     tx.setSender(ensureAddressFormat(sender));
-    const [coin] = tx.splitCoins(tx.gas, [fakeTransaction.amount.toNumber()]);
+    const coinObjectId = await getCoinObjectId(sender, fakeTransaction);
+    const [coin] = tx.splitCoins(coinObjectId ?? tx.gas, [fakeTransaction.amount.toNumber()]);
     tx.transferObjects([coin], fakeTransaction.recipient);
     const txb = await tx.build({ client: api });
     const dryRunTxResponse = await api.dryRunTransactionBlock({ transactionBlock: txb });
@@ -214,12 +247,31 @@ export const paymentInfo = async (sender: string, fakeTransaction: TransactionTy
     };
   });
 
+export const getCoinObjectId = async (
+  address: string,
+  transaction: CreateExtrinsicArg | TransactionType,
+) =>
+  withApi(async api => {
+    let coinObjectId = null;
+
+    if (transaction.coinType !== DEFAULT_COIN_TYPE) {
+      const tokenInfo = await api.getCoins({
+        owner: address,
+        coinType: transaction.coinType,
+      });
+      coinObjectId = tokenInfo.data[0].coinObjectId;
+    }
+    return coinObjectId;
+  });
+
 export const createTransaction = async (address: string, transaction: CreateExtrinsicArg) =>
   withApi(async api => {
     const tx = new Transaction();
     tx.setSender(ensureAddressFormat(address));
 
-    const [coin] = tx.splitCoins(tx.gas, [transaction.amount.toNumber()]);
+    const coinObjectId = await getCoinObjectId(address, transaction);
+
+    const [coin] = tx.splitCoins(coinObjectId ?? tx.gas, [transaction.amount.toNumber()]);
     tx.transferObjects([coin], transaction.recipient);
 
     return tx.build({ client: api });

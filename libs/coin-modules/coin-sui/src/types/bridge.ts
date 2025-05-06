@@ -29,6 +29,7 @@ export type Transaction = TransactionCommon & {
   fees?: BigNumber | null;
   errors: Record<string, Error>;
   skipVerify?: boolean;
+  coinType?: string;
   // add here all transaction-specific fields when implement other modes than "send"
 };
 
@@ -65,18 +66,26 @@ export type SuiOperation = Operation<SuiOperationExtra>;
 export type SuiOperationRaw = OperationRaw<SuiOperationExtraRaw>;
 
 export type SuiOperationExtra = {
+  coinType?: string;
   transferAmount?: BigNumber;
 };
 export type SuiOperationExtraRaw = Record<string, string>;
 
 export type TransferCommand = {
-  kind: "transfer";
+  kind: "send";
   sender: string;
   recipient: string;
   amount: number;
 };
 
-export type Command = TransferCommand;
+export type TokenTransferCommand = {
+  kind: "token.send";
+  sender: string;
+  recipient: string;
+  amount: number;
+};
+
+export type Command = TransferCommand | TokenTransferCommand;
 
 export type CommandDescriptor = {
   command: Command;
