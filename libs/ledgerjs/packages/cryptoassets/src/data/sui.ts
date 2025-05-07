@@ -8,6 +8,6 @@ export type SuiToken = [
 
 import tokens from "./sui.json";
 
-export { default as hash } from "./spl-hash.json";
+export { default as hash } from "./sui-hash.json";
 
 export default tokens as SuiToken[];
