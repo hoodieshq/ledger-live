@@ -40,6 +40,7 @@ export const estimateMaxSpendable: AccountBridge<Transaction>["estimateMaxSpenda
 
     return spendableBalance;
   } catch (e) {
+    console.log("estimateMaxSpendable error", e);
     return new BigNumber(0);
   }
 };

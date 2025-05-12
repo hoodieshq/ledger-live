@@ -67,7 +67,6 @@ export const getAccountShape: GetAccountShape<SuiAccount> = async (info, syncCon
       accountId,
       accountBalances: accountBalances.filter(({ coinType }) => coinType != DEFAULT_COIN_TYPE),
       initialAccount,
-      initialAccountAddress: address,
       operations,
       syncConfig,
     })) || [];

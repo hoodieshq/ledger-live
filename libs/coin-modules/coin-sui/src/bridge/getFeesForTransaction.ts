@@ -33,5 +33,6 @@ export default async function getEstimatedFees({
   };
 
   const fees = await estimateFees(account.freshAddress, t);
+  console.log("fees", fees, fees.toString());
   return new BigNumber(fees.toString());
 }

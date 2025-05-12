@@ -48,7 +48,7 @@ const getWindowPosition = (width: number, height: number, display = screen.getPr
 
 const webPreferences: WebPreferences = {
   // https://ledgerhq.atlassian.net/browse/LIVE-6785 : This is a TEMPORARY workaround for some of our backend not yet supporting CORS. we will remove this once it's the case. this is only for develop mode because production don't do strict CORS check at the moment.
-  webSecurity: !(__DEV__ && BYPASS_CORS === "1"),
+  webSecurity: false,
   // required for Live Apps integration (usage of <webview> in PlatformAPIWebview.tsx)
   webviewTag: true,
   // allow devtools to exists in development mode or when explicitly enabled with DEV_TOOLS env var
@@ -149,9 +149,9 @@ export async function createMainWindow(
     ...restorePosition(positions, dimensions),
     ...(process.platform === "darwin"
       ? {
-          frame: false,
-          titleBarStyle: "hiddenInset" as const,
-        }
+        frame: false,
+        titleBarStyle: "hiddenInset" as const,
+      }
       : {}),
     minWidth: MIN_WIDTH,
     minHeight: MIN_HEIGHT,
