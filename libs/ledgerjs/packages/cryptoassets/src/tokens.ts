@@ -59,10 +59,13 @@ addTokens(jettonTokens.map(convertJettonToken));
 addTokens(filecoinTokens.map(convertERC20));
 // Solana tokens
 addTokens(spltokens.map(convertSplTokens));
-// Sui tokens
-addTokens(suitokens.map(convertSuiTokens));
 // Sonic
 addTokens(sonicTokens.map(convertERC20));
+
+if (getEnv("SUI_ENABLE_TOKENS")) {
+  // Sui tokens
+  addTokens(suitokens.map(convertSuiTokens));
+}
 
 if (getEnv("APTOS_ENABLE_TOKENS")) {
   // Aptos Legacy Coin tokens

@@ -21,7 +21,7 @@ const getExtra = (type: string, transaction: Transaction): SuiOperationExtra => 
   const extra: SuiOperationExtra = {};
 
   switch (type) {
-    case "OUT":
+    case MODE_TO_TYPE.send:
       return { ...extra, transferAmount: new BigNumber(transaction.amount) };
   }
 
@@ -111,7 +111,7 @@ function optimisticOpForTokenTransfer(
   return {
     ...commons,
     id: encodeOperationId(transaction.subAccountId, "", type),
-    type: "OUT",
+    type,
     value,
     senders: [account.freshAddress],
     recipients: [transaction.recipient].filter(Boolean),
