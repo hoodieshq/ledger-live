@@ -7,11 +7,16 @@ import { CurrencyConfig } from "@ledgerhq/coin-framework/config";
 
 const cache = makeLRUCache(fetchSanctionedAddresses, () => "all_sanctioned_addresses", hours(12));
 
+// remove from PR
 async function fetchSanctionedAddresses(): Promise<Record<string, string[]>> {
-  const { data } = await axios.get(
-    "https://ofac-compliance.pages.dev/all_sanctioned_addresses.json",
-  );
-  return data;
+  try {
+    const { data } = await axios.get(
+      "https://ofac-compliance.pages.dev/all_sanctioned_addresses.json",
+    );
+    return data;
+  } catch (e) {
+    return {};
+  }
 }
 
 export async function isAddressSanctioned(
