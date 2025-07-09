@@ -176,6 +176,7 @@ export type CryptoCurrencyId =
   | "mantra"
   | "xion"
   | "sui"
+  | "canton"
   | "zenrock"
   | "sonic"
   | "sonic_blaze"

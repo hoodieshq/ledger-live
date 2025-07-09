@@ -4487,6 +4487,25 @@ export const cryptocurrenciesById: Record<CryptoCurrencyId, CryptoCurrency> = {
       },
     ],
   },
+  canton: {
+    type: "CryptoCurrency",
+    id: "canton",
+    coinType: 1337, // Placeholder, update if you have a real SLIP-0044 value
+    name: "Canton",
+    managerAppName: "Canton",
+    ticker: "CTN",
+    scheme: "canton",
+    color: "#0057B8",
+    family: "canton",
+    units: [
+      {
+        name: "Canton Coin",
+        code: "CTN",
+        magnitude: 8,
+      },
+    ],
+    explorerViews: [],
+  },
   babylon: {
     type: "CryptoCurrency",
     id: "babylon",
