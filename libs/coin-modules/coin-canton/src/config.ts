@@ -1,12 +1,12 @@
 import buildCoinConfig, { type CurrencyConfig } from "@ledgerhq/coin-framework/config";
 
-export type BoilerplateConfig = {
+export type CantonConfig = {
   nodeUrl: string;
   minReserve: number;
 };
 
-export type BoilerplateCoinConfig = CurrencyConfig & BoilerplateConfig;
+export type CantonCoinConfig = CurrencyConfig & CantonConfig;
 
-const coinConfig = buildCoinConfig<BoilerplateCoinConfig>();
+const coinConfig = buildCoinConfig<CantonCoinConfig>();
 
 export default coinConfig;

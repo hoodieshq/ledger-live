@@ -8,9 +8,9 @@ import {
 import { CoinConfig } from "@ledgerhq/coin-framework/config";
 import { SignerContext } from "@ledgerhq/coin-framework/signer";
 import type { AccountBridge, CurrencyBridge } from "@ledgerhq/types-live";
-import boilerplateCoinConfig, { type BoilerplateCoinConfig } from "../config";
+import cantonCoinConfig, { type CantonCoinConfig } from "../config";
 import resolver from "../signer";
-import { BoilerplateSigner } from "../types";
+import { CantonSigner } from "../types";
 import type { Transaction } from "../types";
 import { broadcast } from "./broadcast";
 import { createTransaction } from "./createTransaction";
@@ -22,10 +22,10 @@ import { getAccountShape } from "./sync";
 import { updateTransaction } from "./updateTransaction";
 
 export function createBridges(
-  signerContext: SignerContext<BoilerplateSigner>,
-  coinConfig: CoinConfig<BoilerplateCoinConfig>,
+  signerContext: SignerContext<CantonSigner>,
+  coinConfig: CoinConfig<CantonCoinConfig>,
 ) {
-  boilerplateCoinConfig.setCoinConfig(coinConfig);
+  cantonCoinConfig.setCoinConfig(coinConfig);
 
   const getAddress = resolver(signerContext);
   const receive = makeAccountBridgeReceive(getAddressWrapper(getAddress));

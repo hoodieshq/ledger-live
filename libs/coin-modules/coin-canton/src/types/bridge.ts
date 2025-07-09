@@ -8,24 +8,24 @@ import type {
 } from "@ledgerhq/types-live";
 
 export type NetworkInfo = {
-  family: "boilerplate";
+  family: "canton";
   serverFee: BigNumber;
   baseReserve: BigNumber;
 };
 
 export type NetworkInfoRaw = {
-  family: "boilerplate";
+  family: "canton";
   serverFee: string;
   baseReserve: string;
 };
 
 export type Transaction = TransactionCommon & {
-  family: "boilerplate";
+  family: "canton";
   fee: BigNumber | null | undefined;
 };
 
 export type TransactionRaw = TransactionCommonRaw & {
-  family: "boilerplate";
+  family: "canton";
   fee: string | null | undefined;
 };
 
