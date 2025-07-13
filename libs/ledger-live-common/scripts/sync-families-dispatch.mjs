@@ -49,6 +49,7 @@ const familiesWPackage = [
   "vechain",
   "xrp",
   "sui",
+  "canton",
   "mina",
 ];
 

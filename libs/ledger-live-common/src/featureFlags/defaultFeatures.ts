@@ -90,6 +90,7 @@ export const CURRENCY_DEFAULT_FEATURES = {
   currencySonicBlaze: DEFAULT_FEATURE,
   currencySonic: DEFAULT_FEATURE,
   currencySui: DEFAULT_FEATURE,
+  currencyCanton: DEFAULT_FEATURE,
   currencyMina: DEFAULT_FEATURE,
   currencyBabylon: DEFAULT_FEATURE,
   currencySeiNetworkEvm: DEFAULT_FEATURE,

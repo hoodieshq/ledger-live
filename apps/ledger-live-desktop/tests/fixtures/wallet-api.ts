@@ -1042,6 +1042,15 @@ export const expectedCurrencyList = [
   },
   {
     type: "CryptoCurrency",
+    id: "canton",
+    ticker: "CTN",
+    name: "Canton",
+    family: "canton",
+    color: "#0057B8",
+    decimals: 8,
+  },
+  {
+    type: "CryptoCurrency",
     id: "zenrock",
     ticker: "ROCK",
     name: "Zenrock",

@@ -2,7 +2,7 @@ export * from "./bridge";
 export * from "./signer";
 export * from "./assets";
 
-export type BoilerplateNativeTransaction = {
+export type CantonNativeTransaction = {
   TransactionType: "Payment";
   Account: string;
   Amount: string;
@@ -12,3 +12,6 @@ export type BoilerplateNativeTransaction = {
   SigningPubKey?: string;
   TxnSignature?: string;
 };
+
+// Temporary alias for backward compatibility; will be removed later.
+export type BoilerplateNativeTransaction = CantonNativeTransaction;

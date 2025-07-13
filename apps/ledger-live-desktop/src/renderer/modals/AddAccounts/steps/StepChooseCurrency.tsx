@@ -92,6 +92,7 @@ const StepChooseCurrency = ({ currency, setCurrency }: StepProps) => {
   const sonic = useFeature("currencySonic");
   const sonicBlaze = useFeature("currencySonicBlaze");
   const sui = useFeature("currencySui");
+  const canton = useFeature("currencyCanton");
   const mina = useFeature("currencyMina");
   const babylon = useFeature("currencyBabylon");
   const seiNetworkEvm = useFeature("currencySeiNetworkEvm");
@@ -160,6 +161,7 @@ const StepChooseCurrency = ({ currency, setCurrency }: StepProps) => {
       sonic,
       sonic_blaze: sonicBlaze,
       sui,
+      canton,
       mina,
       babylon,
     }),
@@ -221,6 +223,7 @@ const StepChooseCurrency = ({ currency, setCurrency }: StepProps) => {
       sonic,
       sonicBlaze,
       sui,
+      canton,
       mina,
       babylon,
       berachain,

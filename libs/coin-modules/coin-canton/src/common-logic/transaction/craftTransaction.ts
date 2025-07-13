@@ -1,7 +1,7 @@
 import BigNumber from "bignumber.js";
-import { BoilerplateNativeTransaction } from "../../types";
+import { CantonNativeTransaction } from "../../types";
 
-const encodeNativeTx = (nativeTx: BoilerplateNativeTransaction) => JSON.stringify(nativeTx);
+const encodeNativeTx = (nativeTx: CantonNativeTransaction) => JSON.stringify(nativeTx);
 
 export async function craftTransaction(
   account: {
@@ -15,10 +15,10 @@ export async function craftTransaction(
     fee?: BigNumber;
   },
 ): Promise<{
-  nativeTransaction: BoilerplateNativeTransaction;
+  nativeTransaction: CantonNativeTransaction;
   serializedTransaction: string;
 }> {
-  const nativeTransaction: BoilerplateNativeTransaction = {
+  const nativeTransaction: CantonNativeTransaction = {
     TransactionType: "Payment",
     Account: account.address,
     Amount: transaction.amount.toString(),

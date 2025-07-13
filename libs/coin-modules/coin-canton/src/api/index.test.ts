@@ -1,9 +1,13 @@
 import { createApi } from ".";
-import { BoilerplateConfig } from "../config";
+import { CantonConfig } from "../config";
 
 describe("createApi", () => {
   it("should return every api methods", () => {
-    const api = createApi({} as BoilerplateConfig);
+    const config: CantonConfig = {
+      nodeUrl: "https://canton.testnet.canton.io",
+      minReserve: 1000000000000000000,
+    };
+    const api = createApi(config);
     expect(api.broadcast).toBeDefined();
     expect(api.combine).toBeDefined();
     expect(api.craftTransaction).toBeDefined();

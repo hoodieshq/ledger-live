@@ -67,4 +67,4 @@ const cliTools = {
   },
 };
 
-export { bridge, cliTools, resolver }; 
+export { bridge, cliTools, resolver };

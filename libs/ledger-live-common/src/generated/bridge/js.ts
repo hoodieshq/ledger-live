@@ -21,6 +21,7 @@ import { bridge as ton } from "../../families/ton/setup";
 import { bridge as tron } from "../../families/tron/setup";
 import { bridge as vechain } from "../../families/vechain/setup";
 import { bridge as sui } from "../../families/sui/setup";
+import { bridge as canton } from "../../families/canton/setup";
 import { bridge as mina } from "../../families/mina/setup";
 
 export default {
@@ -47,5 +48,6 @@ export default {
   tron,
   vechain,
   sui,
+  canton,
   mina,
 };

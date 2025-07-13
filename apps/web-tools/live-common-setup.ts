@@ -73,6 +73,7 @@ setSupportedCurrencies([
   "xion",
   "zenrock",
   "sui",
+  "canton",
   "mina",
   "babylon",
 ]);

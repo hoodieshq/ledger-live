@@ -191,6 +191,9 @@ const modes: Readonly<Record<DerivationMode, ModeSpec>> = Object.freeze({
   sui: {
     overridesDerivation: "44'/784'/<account>'/0'/0'",
   },
+  canton: {
+    overridesDerivation: "44'/1000'/<account>'/0/0",
+  },
 });
 
 // WIP

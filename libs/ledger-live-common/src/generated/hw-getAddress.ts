@@ -22,6 +22,7 @@ import { resolver as tron } from "../families/tron/setup";
 import { resolver as vechain } from "../families/vechain/setup";
 import { resolver as xrp } from "../families/xrp/setup";
 import { resolver as sui } from "../families/sui/setup";
+import { resolver as canton } from "../families/canton/setup";
 import { resolver as mina } from "../families/mina/setup";
 
 export default {
@@ -49,5 +50,6 @@ export default {
   vechain,
   xrp,
   sui,
+  canton,
   mina,
 };

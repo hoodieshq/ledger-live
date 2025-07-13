@@ -217,6 +217,11 @@ const envDefinitions = {
     def: true,
     desc: "Enable tokens on Sui",
   },
+  API_CANTON_NODE_PROXY: {
+    parser: stringParser,
+    def: "https://canton.testnet.canton.io",
+    desc: "reverse proxy url for canton node",
+  },
   SOLANA_VALIDATORS_APP_BASE_URL: {
     parser: stringParser,
     def: "https://earn.api.live.ledger.com/v0/network/solana/validator-details",
