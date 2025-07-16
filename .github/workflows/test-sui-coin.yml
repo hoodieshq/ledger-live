@@ -1,0 +1,49 @@
+name: "[SUI] - Test SUI Coin Module"
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - develop
+    paths:
+      - 'libs/coin-modules/coin-sui/**'
+  pull_request:
+    paths:
+      - 'libs/coin-modules/coin-sui/**'
+
+permissions:
+  contents: read
+
+jobs:
+  test-sui-coin:
+    name: "SUI Coin Module Tests"
+    runs-on: ubuntu-22.04
+    env:
+      NODE_OPTIONS: "--max-old-space-size=4096"
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm i --filter="@ledgerhq/coin-sui..." --filter="ledger-live"
+
+      - name: Build SUI coin module dependencies
+        run: pnpm build --filter="@ledgerhq/coin-sui^..."
+
+      - name: Run SUI unit tests
+        run: pnpm coin:sui test
+
+      - name: Run SUI integration tests
+        run: pnpm coin:sui test-integ
+        continue-on-error: true
+        env:
+          API_SUI_NODE_PROXY: ${{ secrets.API_SUI_NODE_PROXY || 'https://sui-mainnet.public.blastapi.io' }}
+
+      - name: Generate coverage
+        run: pnpm coin:sui coverage 
