@@ -10,6 +10,8 @@ import {
   craftTransaction,
   estimateFees,
   getBalance,
+  getBlockInfo,
+  getBlock,
   getNextValidSequence,
   lastBlock,
   listOperations,
@@ -27,6 +29,8 @@ export function createApi(config: CantonConfig): AlpacaApi<BoilerplateAsset> {
     estimateFees: estimate,
     getBalance,
     lastBlock,
+    getBlockInfo,
+    getBlock,
     listOperations,
   };
 }
