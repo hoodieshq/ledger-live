@@ -16,6 +16,13 @@ export function useAssetSelection(
 
   const [assetsToDisplay, setAssetsToDisplay] = useState<CryptoOrTokenCurrency[] | null>(null);
 
+  console.log(
+    "useAssetSelection assetsToDisplay",
+    assetsToDisplay,
+    currencies,
+    filteredSortedCryptoCurrencies,
+  );
+
   return {
     assetsToDisplay: assetsToDisplay ?? filteredSortedCryptoCurrencies,
     setAssetsToDisplay,

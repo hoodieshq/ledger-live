@@ -50,6 +50,23 @@ export function filterCurrencies(
     ? filters.currencies.map(filter => makeRe(filter))
     : null;
 
+  console.log(
+    "filterCurrencies - filtered currencies",
+    currencies.filter(currency => {
+      if (!filters.includeTokens && isTokenCurrency(currency)) {
+        return false;
+      }
+
+      if (
+        filterCurrencyRegexes &&
+        filterCurrencyRegexes.length &&
+        !filterCurrencyRegexes.some(regex => currency.id.match(regex))
+      ) {
+        return false;
+      }
+    }),
+  );
+
   return currencies.filter(currency => {
     if (!filters.includeTokens && isTokenCurrency(currency)) {
       return false;
@@ -74,6 +91,10 @@ export function listAndFilterCurrencies({
   // We removed the filtering with `isPlatformSupportedCurrency`
   // As we want to show all the currencies in the requestAccount drawer
   const allCurrencies = listCurrencies(includeTokens);
+
+  console.log("listCurrencies", listCurrencies(includeTokens));
+  console.log("listAndFilterCurrencies", allCurrencies, includeTokens, currencies);
+  console.log("filterCurrencies", filterCurrencies(allCurrencies, { includeTokens, currencies }));
 
   return filterCurrencies(allCurrencies, {
     includeTokens,

@@ -181,6 +181,10 @@ export function useModularDrawerFlowState({
 
   useEffect(() => {
     if (hasOneCurrency && !selectedAsset) {
+      console.log(
+        "DEBUG: Auto-selecting single currency - this might trigger SelectAssetList rendering",
+        currenciesIdsArray[0],
+      );
       const currencyIdToFind = currenciesIdsArray[0];
       const currency = getTokenOrCryptoCurrencyById(currencyIdToFind);
 

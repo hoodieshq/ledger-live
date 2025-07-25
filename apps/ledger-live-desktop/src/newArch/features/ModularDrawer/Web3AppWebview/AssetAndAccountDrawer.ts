@@ -62,6 +62,11 @@ function openAssetAndAccountDrawer(params: DrawerParams): void {
   const filteredCurrencies =
     currencies ?? listAndFilterCurrencies({ currencies: assetIds, includeTokens });
 
+  console.log("DEBUG: Web3App openAssetAndAccountDrawer params", currencies, filteredCurrencies);
+  console.log(
+    "DEBUG: Web3App flow detected - this is why you see SelectAssetList without AssetSelection",
+  );
+
   return setDrawer(
     ModularDrawerFlowManager,
     {
@@ -84,6 +89,7 @@ function openAssetAndAccountDrawer(params: DrawerParams): void {
 function openAssetAndAccountDrawerPromise(
   drawerParams: Omit<DrawerParams, "onSuccess" | "onCancel">,
 ) {
+  console.log("openAssetAndAccountDrawerPromise", drawerParams);
   return new Promise<Result>((resolve, reject) =>
     openAssetAndAccountDrawer({
       ...drawerParams,

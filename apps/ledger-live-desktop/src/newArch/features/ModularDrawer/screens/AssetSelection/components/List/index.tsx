@@ -45,6 +45,7 @@ export const SelectAssetList = ({
   });
 
   const formattedAssets = transformAssets(assetsToDisplay);
+  console.log("SelectAssetList formattedAssets", formattedAssets);
 
   const isLoading = [LoadingStatus.Pending, LoadingStatus.Idle].includes(providersLoadingStatus);
   const shouldDisplayEmptyState = (!formattedAssets || formattedAssets.length === 0) && !isLoading;

@@ -248,6 +248,8 @@ function PortfolioScreen({ navigation }: NavigationProps) {
     ],
   );
 
+  console.log("PortfolioScreen currencies", currencies);
+
   return (
     <ReactNavigationPerformanceView screenName={ScreenName.Portfolio} interactive>
       <CheckLanguageAvailability />

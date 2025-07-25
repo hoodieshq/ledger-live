@@ -119,6 +119,8 @@ export const PlatformAPIWebview = forwardRef<WebviewAPI, WebviewProps>(
            */
           const safeCurrencyIds = currencyIds?.filter(c => typeof c === "string") ?? undefined;
 
+          console.log("PlatformAPIWebview requestAccount", safeCurrencyIds, includeTokens);
+
           const allCurrencies = listAndFilterCurrencies({
             currencies: safeCurrencyIds,
             includeTokens,

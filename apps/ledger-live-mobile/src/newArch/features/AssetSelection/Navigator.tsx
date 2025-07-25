@@ -64,6 +64,8 @@ export default function Navigator() {
     [colors],
   );
 
+  console.log("Navigator", route.params);
+
   return (
     <Stack.Navigator
       screenOptions={{

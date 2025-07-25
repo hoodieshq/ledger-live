@@ -50,6 +50,7 @@ export const requestAccountLogic = async (
    * JSONRPC requests. So we need to make sure the array is properly typed.
    */
   const safeCurrencies = currencies?.filter(c => typeof c === "string") ?? undefined;
+  console.log("LiveAppSDKLogic", currencies);
 
   const { account, parentAccount } = modularDrawerVisible
     ? await openAssetAndAccountDrawerPromise({

@@ -11,6 +11,7 @@ export function selectAccountAndCurrency(
   includeTokens?: boolean,
 ): Promise<SelectAccountAndCurrencyResult> {
   return new Promise((resolve, reject) => {
+    console.log("selectAccountAndCurrency", currencies, includeTokens);
     setDrawer(
       SelectAccountAndCurrencyDrawer,
       {

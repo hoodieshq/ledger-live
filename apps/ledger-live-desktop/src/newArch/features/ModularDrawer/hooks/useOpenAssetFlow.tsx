@@ -26,6 +26,8 @@ function selectCurrency(
   const filteredCurrencies =
     currencies ?? listAndFilterCurrencies({ currencies: assetIds, includeTokens });
 
+  console.log("useOpenAssetFlow/selectCurrency", currencies, filteredCurrencies, assetIds);
+
   setDrawer(
     ModularDrawerFlowManager,
     {

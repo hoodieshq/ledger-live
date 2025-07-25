@@ -20,6 +20,8 @@ export const AssetList = ({
     [onClick],
   );
 
+  console.log("AssetList", assets);
+
   return (
     <VirtualList
       itemHeight={64}

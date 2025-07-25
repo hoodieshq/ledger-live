@@ -17,8 +17,10 @@ export function ModularDrawerFlowView({
 
   const renderStepContent = () => {
     switch (currentStep) {
-      case ModularDrawerStep.Asset:
+      case ModularDrawerStep.Asset: {
+        console.log("ModularDrawerFlowView AssetSelection", assetsViewModel);
         return <AssetSelection {...assetsViewModel} />;
+      }
       case ModularDrawerStep.Network:
         return <NetworkSelection {...networksViewModel} />;
       case ModularDrawerStep.Account:

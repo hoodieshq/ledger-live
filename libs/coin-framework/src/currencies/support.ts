@@ -21,6 +21,7 @@ function getExperimentalSupports() {
 
 export function listSupportedCurrencies(): CryptoCurrency[] {
   const experimentals = getExperimentalSupports();
+  // console.log("listSupportedCurrencies", experimentals, userSupportedCurrencies);
   return experimentals.length === 0
     ? userSupportedCurrencies
     : userSupportedCurrencies.concat(experimentals);

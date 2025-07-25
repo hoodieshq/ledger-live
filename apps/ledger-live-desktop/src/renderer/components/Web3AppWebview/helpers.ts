@@ -326,6 +326,7 @@ export function useSelectAccount({
   }, []);
 
   const onSelectAccount = useCallback(() => {
+    console.log("onSelectAccount", currencies);
     modularDrawerVisible
       ? openAssetAndAccountDrawer({
           currencies,

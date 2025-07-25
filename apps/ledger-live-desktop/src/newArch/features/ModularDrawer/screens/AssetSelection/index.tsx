@@ -50,6 +50,8 @@ const AssetSelection = ({
     return () => clearTimeout(timeout);
   }, [defaultSearchValue]);
 
+  console.log("AssetSelection assetsToDisplay", assetsToDisplay);
+
   return (
     <>
       <TrackDrawerScreen

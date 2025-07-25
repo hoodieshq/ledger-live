@@ -68,6 +68,8 @@ function useUiHook(manifest: AppManifest, tracking: TrackingAPI): UiHook {
       "account.request": ({ accounts$, currencies, drawerConfiguration, onSuccess, onCancel }) => {
         ipcRenderer.send("show-app", {});
 
+        console.log("WalletAPIWebview", currencies);
+
         modularDrawerVisible
           ? openAssetAndAccountDrawer({
               accounts$,

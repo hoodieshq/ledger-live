@@ -51,6 +51,7 @@ export function ModularDrawer({
     useInitModularDrawer();
 
   const { availableAssets, currencyIdsArray } = useAssets(currencies, sortedCryptoCurrencies);
+  console.log("ModularDrawer", currencies, availableAssets);
 
   const { handleAsset, handleNetwork, reset, handleBack, availableNetworks } =
     useModularDrawerState({

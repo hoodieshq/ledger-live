@@ -67,6 +67,7 @@ export const AssetItem = ({
   leftElement,
   rightElement,
 }: AssetItemProps) => {
+  console.log("id", id, ticker, name);
   return (
     <Wrapper onClick={() => onClick({ name, ticker, id })}>
       <CryptoIcon size="48px" ledgerId={id} ticker={ticker} />

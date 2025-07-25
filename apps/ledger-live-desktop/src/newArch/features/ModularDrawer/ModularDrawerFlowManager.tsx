@@ -89,6 +89,8 @@ const ModularDrawerFlowManager = ({
     setAssetsToDisplay,
   } = useAssetSelection(currencies, sortedCryptoCurrencies);
 
+  console.log("ModularDrawerFlowManager", currencies, assetsToDisplay);
+
   const [networksToDisplay, setNetworksToDisplay] = useState<CryptoOrTokenCurrency[]>();
   const [originalAssetsToDisplay, setOriginalAssetsToDisplay] = useState<CryptoOrTokenCurrency[]>(
     [],
@@ -184,9 +186,24 @@ const ModularDrawerFlowManager = ({
     // but in some cases we don't want to trigger analytics events as it may have been dismissed automatically depending on the flow.
     // For now we just return null if we are in ASSET_SELECTION step and there is only one currency.
     // This is a temporary solution until we find a better way to handle this but it works as we just don't render a skipped step.
+    console.log(
+      "DEBUG: renderStepContent called with step:",
+      step,
+      "hasOneCurrency:",
+      hasOneCurrency,
+      "currentStep:",
+      currentStep,
+    );
     switch (step) {
       case MODULAR_DRAWER_STEP.ASSET_SELECTION:
+        console.log(
+          "DEBUG: ASSET_SELECTION case - hasOneCurrency:",
+          hasOneCurrency,
+          "assetsToDisplay length:",
+          assetsToDisplay?.length,
+        );
         if (!hasOneCurrency) {
+          console.log("ModularDrawerFlowManager AssetSelection assetsToDisplay", assetsToDisplay);
           return (
             <AssetSelection
               assetsToDisplay={assetsToDisplay}
