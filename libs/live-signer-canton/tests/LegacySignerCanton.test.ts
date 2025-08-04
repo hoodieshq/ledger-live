@@ -19,7 +19,7 @@ describe("LegacySignerCanton", () => {
       const result = await signer.getAddress(path);
 
       expect(result).toBeDefined();
-      expect(result.publicKey).toMatch(/^0x[a-fA-F0-9]{64}$/);
+      expect(result.publicKey).toMatch(/^0x[a-fA-F0-9]{130}$/);
       expect(result.address).toMatch(/^canton_[a-zA-Z0-9]+$/);
     });
   });
@@ -32,7 +32,7 @@ describe("LegacySignerCanton", () => {
       const result = await signer.signTransaction(path, rawTx);
 
       expect(result).toBeDefined();
-      expect(result).toMatch(/^0x[a-fA-F0-9]{64}$/);
+      expect(result).toMatch(/^0x[a-fA-F0-9]{128}$/);
     });
   });
 }); 
