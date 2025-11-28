@@ -396,20 +396,30 @@ export const alpacaGetOperationAmount = (
   }
 };
 
-function getUnstakingDetails(transaction: SuiTransactionBlockResponse): Record<string, unknown> {
-  const details: Record<string, unknown> = {};
+type UnstakingRequestEventJson = {
+  validator_address: string;
+  principal_amount: string;
+  reward_amount: string;
+};
 
+type UnstakingDetails = {
+  validatorAddress?: string;
+  principalAmount?: bigint;
+  rewardAmount?: bigint;
+};
+
+function getUnstakingDetails(transaction: SuiTransactionBlockResponse): UnstakingDetails {
   const unstakingEvent = transaction.events?.find(
     e => e.type === "0x3::validator::UnstakingRequestEvent",
   );
-  if (unstakingEvent?.parsedJson) {
-    const parsed = unstakingEvent.parsedJson as Record<string, string>;
-    details.validatorAddress = parsed.validator_address;
-    details.principalAmount = BigInt(parsed.principal_amount || "0");
-    details.rewardAmount = BigInt(parsed.reward_amount || "0");
-  }
+  if (!unstakingEvent?.parsedJson) return {};
 
-  return details;
+  const parsed = unstakingEvent.parsedJson as UnstakingRequestEventJson;
+  return {
+    validatorAddress: parsed.validator_address,
+    principalAmount: BigInt(parsed.principal_amount || "0"),
+    rewardAmount: BigInt(parsed.reward_amount || "0"),
+  };
 }
 
 /**
