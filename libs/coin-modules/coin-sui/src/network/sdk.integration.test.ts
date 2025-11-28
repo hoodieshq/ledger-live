@@ -11,6 +11,7 @@ import {
   getBlock,
   getBlockInfo,
   getStakes,
+  getListOperations,
 } from "./sdk";
 import { getEnv } from "@ledgerhq/live-env";
 
@@ -238,6 +239,46 @@ describe("SUI SDK Integration tests", () => {
         expect(stake.amount).toEqual(stake.amountDeposited + stake.amountRewarded);
         expect(stake.details).toBeDefined();
       });
+    });
+  });
+
+  describe("DELEGATE/UNDELEGATE", () => {
+    const accountWithStaking = "0xea438b6ce07762ea61e04af4d405dfcf197d5f77d30765f365f75460380f3cce";
+
+    test("listOperations UNDELEGATE should have details from UnstakingRequestEvent", async () => {
+      const result = await getListOperations(accountWithStaking, "desc");
+      const undelegateOps = result.items.filter(op => op.type === "UNDELEGATE");
+
+      expect(undelegateOps.length).toBeGreaterThan(0);
+
+      undelegateOps.forEach(op => {
+        expect(op.details).toBeDefined();
+        expect(op.details?.validatorAddress).toMatch(/^0x[0-9a-f]+$/);
+        expect(typeof op.details?.principalAmount).toBe("bigint");
+        expect(typeof op.details?.rewardAmount).toBe("bigint");
+      });
+    });
+
+    test("getBlock UNDELEGATE should have details from UnstakingRequestEvent", async () => {
+      const result = await getListOperations(accountWithStaking, "desc");
+      const undelegateOp = result.items.find(op => op.type === "UNDELEGATE");
+      expect(undelegateOp).toBeDefined();
+
+      const checkpointId = undelegateOp!.tx.block.height.toString();
+      const block = await getBlock(checkpointId);
+
+      const undelegateTx = block.transactions.find(
+        tx => tx.operations.some(op => op.type === "other" && op.operationType === "UNDELEGATE"),
+      );
+      expect(undelegateTx).toBeDefined();
+
+      const undelegateBlockOp = undelegateTx!.operations.find(
+        op => op.type === "other" && op.operationType === "UNDELEGATE",
+      ) as Record<string, unknown>;
+      expect(undelegateBlockOp).toBeDefined();
+      expect(undelegateBlockOp.validatorAddress).toMatch(/^0x[0-9a-f]+$/);
+      expect(typeof undelegateBlockOp.principalAmount).toBe("bigint");
+      expect(typeof undelegateBlockOp.rewardAmount).toBe("bigint");
     });
   });
 });
