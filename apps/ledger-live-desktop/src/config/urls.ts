@@ -101,6 +101,7 @@ export const urls = {
   sui: {
     stakingBoost: "https://www.ledger.com/sui-staking-boost",
     incentives: "https://www.ledger.com/sui-incentives",
+    stakingRewards: "",
   },
   polkadotFeesInfo: "https://support.ledger.com/article/360016289919-zd",
   multiversxStaking: "https://support.ledger.com/article/7228337345693-zd",
