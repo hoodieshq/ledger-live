@@ -239,6 +239,7 @@ const createCantonAccount = (
   const account = createMockAccount({ xpub: partyId }) as CantonAccount;
   const sender = isOutgoing ? partyId : "sender-address";
   account.cantonResources = {
+    isOnboarded: true,
     pendingTransferProposals: [
       {
         contract_id: contractId,
@@ -246,6 +247,7 @@ const createCantonAccount = (
         receiver,
         amount: "1000000",
         instrument_id: "instrument-123",
+        instrument_admin: "admin-instrument-123",
         memo: "",
         expires_at_micros: Date.now() * 1000 + 3600000000,
       },
@@ -257,7 +259,7 @@ const createCantonAccount = (
 };
 
 const renderComponent = (account: CantonAccount) =>
-  render(<PendingTransferProposals account={account} />);
+  render(<PendingTransferProposals account={account} parentAccount={account} />);
 
 const waitForElement = (queryByTestId: any, testId: string) =>
   waitFor(() => expect(queryByTestId(testId)).not.toBeNull());

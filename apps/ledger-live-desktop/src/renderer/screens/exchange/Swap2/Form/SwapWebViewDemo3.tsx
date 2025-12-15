@@ -125,11 +125,7 @@ const SWAP_USER_IP = getEnv("SWAP_USER_IP");
 const getSegWitAbandonSeedAddress = (): string => "bc1qed3mqr92zvq2s782aqkyx785u23723w02qfrgs";
 
 const SwapWebView = ({ manifest, isEmbedded = false, Loader = SwapLoader }: SwapWebProps) => {
-  const {
-    colors: {
-      palette: { type: themeType },
-    },
-  } = useTheme();
+  const { theme } = useTheme();
   const walletState = useSelector(walletSelector);
   const dispatch = useDispatch();
   const redirectToHistory = useRedirectToSwapHistory();
@@ -183,6 +179,8 @@ const SwapWebView = ({ manifest, isEmbedded = false, Loader = SwapLoader }: Swap
           customFeeConfig: object;
           SWAP_VERSION: string;
           gasLimit?: string;
+          data?: string;
+          recipient?: string;
         };
       }): Promise<{
         feesStrategy: string;
@@ -231,13 +229,15 @@ const SwapWebView = ({ manifest, isEmbedded = false, Loader = SwapLoader }: Swap
           ...transaction,
           subAccountId,
           recipient:
-            mainAccount.currency.id === "bitcoin"
+            params.recipient ||
+            (mainAccount.currency.id === "bitcoin"
               ? getSegWitAbandonSeedAddress()
-              : getAbandonSeedAddress(mainAccount.currency.id),
+              : getAbandonSeedAddress(mainAccount.currency.id)),
           amount: convertToAtomicUnit({
             amount: new BigNumber(params.fromAmount),
             account: fromAccount,
           }),
+          data: (params.data && Buffer.from(params.data.replace("0x", ""), "hex")) || undefined,
           feesStrategy: params.feeStrategy || "medium",
           customGasLimit: params.gasLimit ? new BigNumber(params.gasLimit) : null,
           ...transformToBigNumbers(params.customFeeConfig),
@@ -351,7 +351,7 @@ const SwapWebView = ({ manifest, isEmbedded = false, Loader = SwapLoader }: Swap
             gasPrice: string;
             value: string;
           }
-        | {}
+        | object
       > => {
         const realFromAccountId = getAccountIdFromWalletAccountId(params.fromAccountId);
         if (!realFromAccountId) {
@@ -371,7 +371,7 @@ const SwapWebView = ({ manifest, isEmbedded = false, Loader = SwapLoader }: Swap
         try {
           const tx = await nodeAPI.getTransaction(mainAccount.currency, params.transactionHash);
           return Promise.resolve(tx);
-        } catch (error) {
+        } catch {
           // not a real error, the node just didn't find the transaction yet
           return Promise.resolve({});
         }
@@ -543,7 +543,7 @@ const SwapWebView = ({ manifest, isEmbedded = false, Loader = SwapLoader }: Swap
           manifest={manifestWithHash}
           inputs={{
             source: initialSource,
-            theme: themeType,
+            theme,
             lang: locale,
             currencyTicker: fiatCurrency.ticker,
             swapApiBase: SWAP_API_BASE,

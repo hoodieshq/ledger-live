@@ -152,6 +152,8 @@ export type CurrencyFeatures = {
   currencyMonadTestnet: DefaultFeature;
   currencySomnia: DefaultFeature;
   currencyZeroGravity: DefaultFeature;
+  currencyConcordium: DefaultFeature;
+  currencyConcordiumTestnet: DefaultFeature;
 };
 
 /**
@@ -283,6 +285,8 @@ export type Features = CurrencyFeatures & {
   zcashShielded: DefaultFeature;
   llmNanoOnboardingFundWallet: DefaultFeature;
   lldRebornABtest: DefaultFeature;
+  llmRebornABtest: DefaultFeature;
+  lifiSolana: DefaultFeature;
 };
 
 /**
@@ -683,6 +687,7 @@ export type Feature_ModularDrawer = Feature<{
   enableModularization: boolean;
   searchDebounceTime: number;
   backendEnvironment: string;
+  enableDialogDesktop?: boolean;
 }>;
 
 export type Feature_Noah = Feature<{
