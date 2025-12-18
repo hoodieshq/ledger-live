@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo } from "react";
-import { ApyIndicator, AssetType } from "@ledgerhq/react-ui/pre-ldls";
 import { CryptoOrTokenCurrency } from "@ledgerhq/types-cryptoassets";
+import { AssetType } from "../../../../types";
 import { useModularDrawerAnalytics } from "../../../../analytics/useModularDrawerAnalytics";
 import { ListWrapper } from "../../../../components/ListWrapper";
 import SkeletonList from "../../../../components/SkeletonList";
@@ -16,6 +16,7 @@ import { modularDrawerIsDebuggingDuplicatesSelector } from "~/renderer/reducers/
 import { AssetData } from "@ledgerhq/live-common/modularDrawer/utils/type";
 import { groupCurrenciesByAsset } from "@ledgerhq/live-common/modularDrawer/utils/groupCurrenciesByAsset";
 import { AssetVirtualList } from "../AssetVirtualList";
+import { ApyIndicator } from "../../../../components/ApyIndicator";
 
 export type AssetSelectorContentProps = {
   assetsToDisplay: CryptoOrTokenCurrency[];

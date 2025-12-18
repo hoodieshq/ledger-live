@@ -1,6 +1,6 @@
 import React from "react";
-import { CryptoIcon } from "@ledgerhq/react-ui/pre-ldls";
-import { ListItem } from "@ledgerhq/ldls-ui-react";
+import { CryptoIcon } from "@ledgerhq/crypto-icons";
+import { ListItem } from "@ledgerhq/lumen-ui-react";
 import { formatAddress } from "../../../../components/Address/formatAddress";
 
 export type Account = {
@@ -42,7 +42,13 @@ export const AccountListItem = ({ onClick, account }: AccountListItemProps) => {
       title={name}
       description={formattedAddress}
       descriptionTag={
-        <CryptoIcon size="16px" ledgerId={cryptoId} network={parentId} ticker={ticker} />
+        <CryptoIcon
+          size="16px"
+          ledgerId={cryptoId}
+          network={parentId}
+          ticker={ticker}
+          overridesRadius="4px"
+        />
       }
       trailingContent={renderTrailingContent(balance, fiatValue)}
       onClick={onClick}
