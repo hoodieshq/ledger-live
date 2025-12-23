@@ -62,6 +62,7 @@ const TRANSACTIONS_QUERY_OPTIONS: SuiTransactionBlockResponseOptions = {
   showInput: true,
   showBalanceChanges: true,
   showEffects: true, // To get transaction status and gas fee details
+  showEvents: true, // Required to extract staking/unstaking details from events
 };
 
 type GenericInput<T> = T extends (...args: infer K) => unknown ? K : never;
@@ -395,6 +396,32 @@ export const alpacaGetOperationAmount = (
   }
 };
 
+type UnstakingRequestEventJson = {
+  validator_address: string;
+  principal_amount: string;
+  reward_amount: string;
+};
+
+type UnstakingDetails = {
+  validatorAddress?: string;
+  principalAmount?: bigint;
+  rewardAmount?: bigint;
+};
+
+function getUnstakingDetails(transaction: SuiTransactionBlockResponse): UnstakingDetails {
+  const unstakingEvent = transaction.events?.find(
+    e => e.type === "0x3::validator::UnstakingRequestEvent",
+  );
+  if (!unstakingEvent?.parsedJson) return {};
+
+  const parsed = unstakingEvent.parsedJson as UnstakingRequestEventJson;
+  return {
+    validatorAddress: parsed.validator_address,
+    principalAmount: BigInt(parsed.principal_amount || "0"),
+    rewardAmount: BigInt(parsed.reward_amount || "0"),
+  };
+}
+
 /**
  * This function is only used by alpaca code path
  *
@@ -425,6 +452,7 @@ export function alpacaTransactionToOp(
     senders: getOperationSenders(transaction.transaction?.data),
     type,
     value: BigInt(alpacaGetOperationAmount(address, transaction, coinType).toString()),
+    details: getUnstakingDetails(transaction),
   };
 }
 
@@ -529,6 +557,7 @@ export function toBlockOperation(
           address: change.owner.AddressOwner,
           asset: toSuiAsset(change.coinType),
           amount: BigInt(removeFeesFromAmountForNative(change, fees).toString()),
+          ...getUnstakingDetails(transaction),
         },
       ];
     default:
